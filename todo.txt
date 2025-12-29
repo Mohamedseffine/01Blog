@@ -1,0 +1,112 @@
+section1:
+
+1- login
+2- user profile
+3- feed
+4- hottest
+5- admin panel
+6- saved
+7- liked
+8- comments
+9- likes
+10- search
+11- notification
+12- reports page
+13- complain page / contact us
+
+section2:
+
+if the user doesn't have an account he can not use the app
+
+the user can register but he must provide: first name, family name, gmail, username, date of birth, gender and password
+
+the password must be entered twice in order to be confirmed
+
+user have to loging using password and username/email or using OAuth2 with google, github,and Discord
+
+if the user doesn't have an account he can log in directly using OAuth2 with no need to create an account
+
+after logging in the user is concidered as a normal user
+
+there are 3 roles : Admin, Moderator and user
+
+there is only one admin in the app
+
+the admin has the right to: delete or hide any post, 
+                block, ban or delete any user, upgrade or downgrade the role of any other user 
+                and all other users rights except from reporting or demanding to be a Moderator,
+                hide or delete any comment, undoing all the action said before and acces to the admin pannel
+
+the moderator has the right to: hide a post , ban a user, hide a comment, 
+                report a user or a post, and all the rights of a normal user
+
+the normal user has the right to: create a post, create a comment, react to a post or a comment,
+                 report a post or a user (even if it is a moderator) complain about the hidden or the deleted posts or the blocked account
+                 modify any post or a comment created acces the profile page, follow any other user, 
+                 set a user as a close friend or delete him from the close friend list, and save a post
+
+there is two types of user profiles public and private
+
+only the followers of a private account can see his infos and his created posts the non followers see only his username
+
+the post are three types public, close friends only and private 
+
+public posts can be seen by anyone if the account is public or only the followers if the account is private
+
+the private posts can be seen only by the selected followers if no one is selected it can see only by the user himself
+
+the close friends posts can only see by the close friends that follow the user
+
+anyone can be set a close friend to anyone no need for exchange of follows
+
+to create a post you must provide a title, a content, a subject and an optional image or a video 
+
+the length of the media must be limited in 20Mb (bits not Bytes)
+
+comments only contain the content
+
+feed contains all posts accessible by the user
+
+hottest contains the most recommended posts
+
+saved posts contains all saved accessible posts
+
+liked containes all liked posts
+
+admin page has 5 pannels one for posts, one for comments and the other for users
+
+posts pannel : provides the creator, the title number of comments, 
+                likes and dislikes, and number of reports plus a link of each post
+
+comments pannel : provides the creator, the head of the content, 
+                likes and dislikes, and number of reports plus a link of each comment
+
+users pannel : provides the username number of followers followees 
+                number of posts date of creation and number of reports And number of bans
+
+the banned pannel : conatins a table of the banned users the reason behind the ban
+                 and when the ban is going to end and a button to unban the user manually
+
+the blocked pannel : the same as the banned pannel but it has no limited time
+                 the blocked user will be blocked until the admin changes it
+
+a report must contain a cause an anonymous option 
+
+the user recieves a notification when he gets reported or a post or a comment of his gets reported
+                 when his follow request gets accepted or whe he recieves a follow request 
+                 or when someone comments on or likes or dislikes his post or comment 
+
+users can comment on all accessible posts and reply to comments
+
+tha admin recieves a notification when someone or something gets reported, when a user gets blocked or banned, 
+                or when a moderator does a non simple user act
+
+when a user recieves a notification it appears in the top of the screen and in the notifications page
+
+notifications page shows the first 20 notification and loads more with scroll readed notifications appear with different color than unreaded notifications
+
+the search page contains a search bar and a filter to filter what table to search in 
+
+the reports page has all the non answered reports plus a link to the reported user post or comment to take action and it is only accessible by the admin 
+
+the contact us or the complain page is accessible by everyone but the admin it contains only a form with the gmail and the message
