@@ -110,3 +110,18 @@ the search page contains a search bar and a filter to filter what table to searc
 the reports page has all the non answered reports plus a link to the reported user post or comment to take action and it is only accessible by the admin 
 
 the contact us or the complain page is accessible by everyone but the admin it contains only a form with the gmail and the message
+
+
+
+section3:
+
+jwt
+mutex
+websocket
+spring-boot
+spring-security
+OAuth2
+spring claud
+angular
+css 
+bootstarp
