@@ -1,0 +1,15 @@
+services: 
+  moblog_db:
+    container_name: moblog_db
+    image: postgres:18.1
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: mosef
+      POSTGRES_PASSWORD: 3achtar@2019
+      POSTGRES_DB: moblog_db
+    volumes:
+      - pgdata:/var/lib/postgresql  
+
+volumes: 
+  pgdata: {}
