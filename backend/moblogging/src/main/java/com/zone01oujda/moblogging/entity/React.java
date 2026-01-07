@@ -1,5 +1,5 @@
 package com.zone01oujda.moblogging.entity;
 
-public class Like {
+public class React {
     
 }
