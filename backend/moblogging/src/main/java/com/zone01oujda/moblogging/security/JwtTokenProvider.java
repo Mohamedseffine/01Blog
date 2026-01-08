@@ -16,7 +16,7 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtTokenProvider {
 
-    private final String jwtSecret = "Anzar@Rain$God";
+    private final String jwtSecret = "Anzar@Rain$God$Enlil$Storms@God$Enki$Wisdom@God";
     private  final long jwtExpiration = 86400000;
 
     private final SecretKey secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
