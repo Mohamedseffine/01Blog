@@ -37,7 +37,7 @@ public class Post {
     private PostVisibility visibility;
 
     private String mediaUrl;
-    private String mediaType; // IMAGE or VIDEO
+    private String mediaType; 
 
     private LocalDateTime createdAt;
 

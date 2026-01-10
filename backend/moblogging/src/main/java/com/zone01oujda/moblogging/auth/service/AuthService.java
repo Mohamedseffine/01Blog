@@ -2,11 +2,16 @@ package com.zone01oujda.moblogging.auth.service;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
+import com.zone01oujda.moblogging.auth.dto.AuthResponseDto;
 import com.zone01oujda.moblogging.auth.dto.RegisterRequestDto;
+import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.security.JwtTokenProvider;
+import com.zone01oujda.moblogging.user.enums.Role;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
 
+@Service
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -20,13 +25,34 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public void register(RegisterRequestDto dto) {
+    public AuthResponseDto register(RegisterRequestDto dto) {
         if (!dto.password.equals(dto.confirmPassword) ) {
             throw new RuntimeException("Password Do Not Match");
         }
         if ( dto.password.isEmpty()) {
             throw new RuntimeException("Password Is Empty");
         }
-        
+        if (userRepository.existsByEmail(dto.email)) {
+            throw new RuntimeException("Email Already Exists");
+        }
+        if (userRepository.existsByUsername(dto.username)) {
+            throw new RuntimeException("Username ALready Exists");
+        }
+
+        User user = new User(dto.username, dto.email, passwordEncoder.encode(dto.password));
+
+        user.setDateOfBirth(dto.birthDate);
+        user.setGender(dto.gender);
+        user.setProfileType(dto.profileType);
+        user.setFirstName(dto.firstName);
+        user.setLastName(dto.lastName);
+        user.setRole(Role.USER);
+
+        userRepository.save(user);
+
+        // String token authentication = 
+        return new AuthResponseDto(null);
     }
+
+
 }
