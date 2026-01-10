@@ -25,7 +25,7 @@ public class JwtTokenProvider {
         String username = authentication.getName();
         return Jwts.builder().setSubject(username).setIssuedAt(new Date())
         .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-        .signWith(secretKey, SignatureAlgorithm.ES256).compact();
+        .signWith(secretKey, SignatureAlgorithm.HS256).compact();
     }
 
     public boolean validateToken(String token) {

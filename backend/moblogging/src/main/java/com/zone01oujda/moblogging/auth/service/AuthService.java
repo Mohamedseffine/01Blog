@@ -1,6 +1,8 @@
 package com.zone01oujda.moblogging.auth.service;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -50,8 +52,10 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // String token authentication = 
-        return new AuthResponseDto(null);
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dto.username, dto.password));
+
+        String token = tokenProvider.generateToken(authentication);
+        return new AuthResponseDto(token);
     }
 
 
