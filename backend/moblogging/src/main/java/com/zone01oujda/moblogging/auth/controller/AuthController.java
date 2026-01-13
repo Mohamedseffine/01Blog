@@ -24,9 +24,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public LoginRequestDto login(@RequestBody LoginRequestDto entity) {
-        System.out.println("ana hna");
-        return entity;
+    public AuthResponseDto login(@RequestBody LoginRequestDto entity) {
+        return authService.login(entity);
     }
 
     @PostMapping("/register")

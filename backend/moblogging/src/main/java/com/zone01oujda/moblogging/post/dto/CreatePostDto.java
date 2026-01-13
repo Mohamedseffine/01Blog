@@ -10,4 +10,5 @@ public class CreatePostDto {
     public String postContent;
     public String postSubject;
     public PostVisibility postVisibility;
+    // public Fi
 }
