@@ -61,7 +61,7 @@ public class AuthService {
 
 
 
-        if (dto.password.length()>15) {
+        if (dto.password.length()>32) {
             throw new RuntimeException("Password Exceeds Maximum Lenght");
         }
 
@@ -84,11 +84,9 @@ public class AuthService {
         user.setLastName(dto.lastName);
         user.setRole(Role.USER);
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dto.username, dto.password));
-
-        String token = tokenProvider.generateToken(authentication);
+        String token = tokenProvider.generateAccesToken(savedUser);
 
         return new AuthResponseDto(token);
     }
@@ -102,26 +100,13 @@ public class AuthService {
         if (dto.usernameOrEmail.isEmpty()){
             throw new RuntimeException("Username Or Email Is Empty");
         }
-
-        Optional<User> userOpt = userRepository.findByUsernameOrEmail(dto.usernameOrEmail, dto.usernameOrEmail);
-
-        if (userOpt.isEmpty()) {
-            throw new RuntimeException("Username Or Email Not Found");
-        }
-
-        User user = userOpt.get();
-
-        if ( user == null) {
-            throw new RuntimeException("Username Or Email Not Found");
-        }
-
-        if (!passwordEncoder.matches(dto.password, user.getPassword())) {
-            throw new RuntimeException("Wrong Password");
-        }
-
+                                
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dto.usernameOrEmail, dto.password));
-
-        String token = tokenProvider.generateToken(authentication);
+        
+        
+        Optional<User> userOpt = userRepository.findByUsernameOrEmail(authentication.getName());
+        
+        String token = tokenProvider.generateAccesToken(userOpt.get());
 
         return new AuthResponseDto(token);
     }

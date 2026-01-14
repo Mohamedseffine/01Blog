@@ -2,29 +2,50 @@ package com.zone01oujda.moblogging.security;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.crypto.SecretKey;
 
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.zone01oujda.moblogging.entity.User;
 
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class JwtTokenProvider {
 
-    private final String jwtSecret = "Anzar@Rain$God$Enlil$Storms@God$Enki$Wisdom@God";
-    private  final long jwtExpiration = 86400000;
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
-    private final SecretKey secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    @Value("${jwt.expiration}")
+    private Long jwtAccessExpiration;
 
-    public String generateToken(Authentication authentication) {
-        String username = authentication.getName();
-        return Jwts.builder().setSubject(username).setIssuedAt(new Date())
-        .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+    private SecretKey secretKey ;
+
+    @PostConstruct
+    public void init() {
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String generateAccesToken(User user) {
+        Map<String,Object> claims = new HashMap<>();
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        claims.put("sub", user.getUsername());
+        claims.put("exp", new Date(System.currentTimeMillis() + jwtAccessExpiration));
+        claims.put("fnm",user.getFirstName()+user.getLastName());
+        claims.put("iat",new Date());
+        claims.put("iss","moblogging");
+        claims.put("UserId", user.getId());
+        claims.put("email", user.getEmail());
+        claims.put("role", user.getRole());
+        return Jwts.builder().setClaims(claims)
         .signWith(secretKey, SignatureAlgorithm.HS256).compact();
     }
 
