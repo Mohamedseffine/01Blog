@@ -10,6 +10,8 @@ import com.zone01oujda.moblogging.auth.dto.LoginRequestDto;
 import com.zone01oujda.moblogging.auth.dto.RegisterRequestDto;
 import com.zone01oujda.moblogging.auth.service.AuthService;
 
+import jakarta.validation.Valid;
+
 
 
 
@@ -24,12 +26,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public AuthResponseDto login(@RequestBody LoginRequestDto entity) {
+    public AuthResponseDto login(@Valid  @RequestBody LoginRequestDto entity) {
         return authService.login(entity);
     }
 
     @PostMapping("/register")
-    public AuthResponseDto register(@RequestBody RegisterRequestDto entity) {
+    public AuthResponseDto register(@Valid  @RequestBody RegisterRequestDto entity) {
         return authService.register(entity);
     }
     

@@ -5,7 +5,10 @@ import java.time.LocalDate;
 import com.zone01oujda.moblogging.user.enums.Gender;
 import com.zone01oujda.moblogging.user.enums.ProfileType;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -24,7 +27,7 @@ public class RegisterRequestDto {
     public String username;
 
     @NotBlank(message = "The email is empty")
-    @Size(min = 8, max = 15)
+    @Email(message="email not valid")
     public String email;
 
     @NotBlank(message = "The password is empty")
@@ -35,12 +38,13 @@ public class RegisterRequestDto {
     @Size(min = 10, max = 32)
     public String confirmPassword;
 
+    @Past(message="the birthdate must be in past")
     public LocalDate birthDate;
 
-    @NotBlank(message = "The gender is empty")
+    @NotNull(message = "The gender is empty")
     public Gender gender;
 
-    @NotBlank(message = "there is no profile type")
+    @NotNull(message = "there is no profile type")
     public ProfileType profileType;
 }
 
