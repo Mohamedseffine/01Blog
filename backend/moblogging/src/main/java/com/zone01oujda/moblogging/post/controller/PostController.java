@@ -1,5 +1,34 @@
 package com.zone01oujda.moblogging.post.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.zone01oujda.moblogging.post.dto.CreatePostDto;
+import com.zone01oujda.moblogging.post.dto.PostDto;
+import com.zone01oujda.moblogging.post.service.PostService;
+
+import jakarta.validation.Valid;
+
+
+@RestController
+@RequestMapping("/posts")
 public class PostController {
+
+    
+    private final PostService postService;
+
+    public PostController(PostService postService) {
+        this.postService = postService;
+    }
+
+    @PostMapping("/create")
+    public PostDto postMethodName(@Valid @RequestBody CreatePostDto entity) {
+        
+        return postService.createPost(entity);
+    }
     
 }

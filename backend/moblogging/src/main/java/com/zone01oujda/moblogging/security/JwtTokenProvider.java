@@ -36,7 +36,6 @@ public class JwtTokenProvider {
 
     public String generateAccesToken(User user) {
         Map<String,Object> claims = new HashMap<>();
-        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         claims.put("sub", user.getUsername());
         claims.put("exp", new Date(System.currentTimeMillis() + jwtAccessExpiration));
         claims.put("fnm",user.getFirstName()+user.getLastName());

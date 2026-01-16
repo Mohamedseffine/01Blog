@@ -55,13 +55,13 @@ public class Post {
         hidden = false;
     }
 
-    public Post(String subject, String content, String mediaUrl, String mediaType, PostVisibility visibility) {
+    public Post(String subject, String content, String mediaUrl, String mediaType, PostVisibility visibility, String title) {
         this();
         this.subject = subject;
         this.content = content;
         this.mediaUrl = mediaUrl;
         this.mediaType = mediaType;
         this.visibility = visibility;
-
+        this.title = title;
     }
 }
