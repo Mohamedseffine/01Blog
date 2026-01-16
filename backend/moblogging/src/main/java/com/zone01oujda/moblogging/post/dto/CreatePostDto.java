@@ -1,6 +1,7 @@
 package com.zone01oujda.moblogging.post.dto;
 
-import java.io.File;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import com.zone01oujda.moblogging.post.enums.PostVisibility;
 
@@ -17,12 +18,12 @@ public class CreatePostDto {
     @NotBlank(message= "post content is empty")
     public String postContent;
     
-    @NotBlank(message="post subject is empty")
-    public String postSubject;
+    @NotNull(message="post subject is empty")
+    public String[] postSubject;
 
     @NotNull(message="post visibility is empty")
     public PostVisibility postVisibility;
 
 
-    public File[] multipartFiles;
+    public MultipartFile[] multipartFiles;
 }

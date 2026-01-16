@@ -1,6 +1,6 @@
 package com.zone01oujda.moblogging.auth.service;
 
-import java.util.Optional;
+
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -109,9 +109,9 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dto.usernameOrEmail, dto.password));
         
         
-        Optional<User> userOpt = userRepository.findByUsernameOrEmail(authentication.getName());
+        User user = userRepository.findByUsernameOrEmail(authentication.getName()).orElseThrow();
         
-        String token = tokenProvider.generateAccesToken(userOpt.get());
+        String token = tokenProvider.generateAccesToken(user);
 
         return new AuthResponseDto(token);
     }

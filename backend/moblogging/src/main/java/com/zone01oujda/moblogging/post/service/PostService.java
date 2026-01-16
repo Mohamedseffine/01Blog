@@ -1,5 +1,6 @@
 package com.zone01oujda.moblogging.post.service;
 
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,7 +34,7 @@ public class PostService {
 
             UserDetails details = (UserDetails) authentication.getPrincipal();
 
-            User user = userRepository.findByUsernameOrEmail(details.getUsername()).get();
+            User user = userRepository.findByUsernameOrEmail(details.getUsername()).orElseThrow();
                 
             if (dto.multipartFiles != null && dto.multipartFiles.length != 0){
                 
@@ -44,16 +45,16 @@ public class PostService {
             if (dto.postTitle.trim().isEmpty()) {
                 throw new RuntimeException("the content is empty");
             }
-            if (dto.postSubject.trim().isEmpty()) {
+            if (dto.postSubject.length == 0) {
                 throw new RuntimeException("the content is empty");
             }
             String urls = "";
             String types ="";
-            Post post = new Post(dto.postSubject,dto.postContent,urls, types, dto.postVisibility, dto.postTitle);
+            Post post = new Post(String.join(",", dto.postSubject) ,dto.postContent,urls, types, dto.postVisibility, dto.postTitle);
             post.setCreator(user);
             postRepository.save(post);
     
-            return new PostDto(post.getTitle(), post.getContent(),post.getSubject(), post.getVisibility(), urls.split("j"));
+            return new PostDto(post.getTitle(), post.getContent(),dto.postSubject, post.getVisibility(), urls.split(","));
         }
         throw new AccessDeniedException("User not authenticated");
     }
