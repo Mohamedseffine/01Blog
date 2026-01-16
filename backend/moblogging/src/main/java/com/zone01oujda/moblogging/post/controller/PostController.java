@@ -1,6 +1,8 @@
 package com.zone01oujda.moblogging.post.controller;
 
 
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,12 +22,12 @@ public class PostController {
     
     private final PostService postService;
 
-    public PostController(PostService postService) {
+    public PostController(@Valid @RequestBody PostService postService) {
         this.postService = postService;
     }
 
-    @PostMapping("/create")
-    public PostDto postMethodName(@Valid @RequestBody CreatePostDto entity) {
+    @PostMapping(value = "/create", consumes={MediaType.MULTIPART_FORM_DATA_VALUE})
+    public PostDto postMethodName(@Valid @ModelAttribute CreatePostDto entity) {
         
         return postService.createPost(entity);
     }

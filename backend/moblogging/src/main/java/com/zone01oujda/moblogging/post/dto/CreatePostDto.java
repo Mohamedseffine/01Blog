@@ -25,5 +25,5 @@ public class CreatePostDto {
     public PostVisibility postVisibility;
 
 
-    public MultipartFile[] multipartFiles;
+    public MultipartFile multipartFiles;
 }

@@ -13,15 +13,19 @@ import com.zone01oujda.moblogging.post.dto.CreatePostDto;
 import com.zone01oujda.moblogging.post.dto.PostDto;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
+import com.zone01oujda.moblogging.util.FileUploadUtil;
 
 @Service
 public class PostService {
 
+    private final FileUploadUtil fileUploadUtil;
+
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    public PostService(PostRepository postRepository, UserRepository userRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository, FileUploadUtil fileUploadUtil) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.fileUploadUtil = fileUploadUtil;
     }
 
     
@@ -33,11 +37,11 @@ public class PostService {
         if (authentication != null && authentication.isAuthenticated()) {
 
             UserDetails details = (UserDetails) authentication.getPrincipal();
-
+            
             User user = userRepository.findByUsernameOrEmail(details.getUsername()).orElseThrow();
-                
-            if (dto.multipartFiles != null && dto.multipartFiles.length != 0){
-                
+            if (dto.multipartFiles != null && !dto.multipartFiles.isEmpty()){
+                System.out.println("uhas   ffffffjjjjjjjjjjjj  lll   hfhuajjjjjjjjsu");
+                fileUploadUtil.upload(dto.multipartFiles);
             }
             if (dto.postContent.trim().isEmpty()) {
                 throw new RuntimeException("the content is empty");
