@@ -39,9 +39,10 @@ public class PostService {
             UserDetails details = (UserDetails) authentication.getPrincipal();
             
             User user = userRepository.findByUsernameOrEmail(details.getUsername()).orElseThrow();
-            if (dto.multipartFiles != null && !dto.multipartFiles.isEmpty()){
-                System.out.println("uhas   ffffffjjjjjjjjjjjj  lll   hfhuajjjjjjjjsu");
-                fileUploadUtil.upload(dto.multipartFiles);
+            if (dto.multipartFiles != null && dto.multipartFiles.length != 0){
+                for (int i=0;i<dto.multipartFiles.length;i++) {
+                    fileUploadUtil.upload(dto.multipartFiles[i]);
+                }
             }
             if (dto.postContent.trim().isEmpty()) {
                 throw new RuntimeException("the content is empty");

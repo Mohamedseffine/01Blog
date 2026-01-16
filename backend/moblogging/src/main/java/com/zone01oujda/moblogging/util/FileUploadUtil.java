@@ -2,6 +2,9 @@ package com.zone01oujda.moblogging.util;
 
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,12 +27,21 @@ public class FileUploadUtil {
 
     public String upload(MultipartFile file) {
         try{
-            System.out.println(uploadDir);
             String type = mediaValidator.detectMimeType(file);
             System.out.println(type);
-            return type;
+            if (type.startsWith("image") || type.startsWith("video")) {
+                Path path = Paths.get("." + uploadDir);
+                if (!Files.exists(path)) {
+                    Files.createDirectories(path);
+                }
+                String newName = mediaValidator.generateSafeFileName();
+                Path uploadPath = path.resolve(newName + file.getOriginalFilename());
+                Files.write(uploadPath, file.getBytes());
+                return uploadPath.toString();
+            }
+            throw new RuntimeException("unsupported filetype");
         }catch (IOException e) {
-            return "";
+            throw new RuntimeException("Error Reading file");
         }
     }  
 }
