@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.zone01oujda.moblogging.entity.Post;
 import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.exception.AccessDeniedException;
+import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
 import com.zone01oujda.moblogging.post.dto.CreatePostDto;
 import com.zone01oujda.moblogging.post.dto.PostDto;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
@@ -38,10 +39,16 @@ public class PostService {
 
             UserDetails details = (UserDetails) authentication.getPrincipal();
             
-            User user = userRepository.findByUsernameOrEmail(details.getUsername()).orElseThrow();
+            User user = userRepository.findByUsernameOrEmail(details.getUsername()).orElseThrow(() -> new InternalError("error finding user"));
+            String urls = "";
             if (dto.multipartFiles != null && dto.multipartFiles.length != 0){
                 for (int i=0;i<dto.multipartFiles.length;i++) {
-                    fileUploadUtil.upload(dto.multipartFiles[i]);
+                    String fileName = fileUploadUtil.upload(dto.multipartFiles[i]);
+                    urls+= fileName;
+                    if (i!= dto.multipartFiles.length -1 ) {
+                        urls+=",";
+                    }
+                    System.out.println(urls);
                 }
             }
             if (dto.postContent.trim().isEmpty()) {
@@ -53,14 +60,20 @@ public class PostService {
             if (dto.postSubject.length == 0) {
                 throw new RuntimeException("the content is empty");
             }
-            String urls = "";
             String types ="";
             Post post = new Post(String.join(",", dto.postSubject) ,dto.postContent,urls, types, dto.postVisibility, dto.postTitle);
             post.setCreator(user);
+            post.setMediaUrl(urls);
             postRepository.save(post);
     
             return new PostDto(post.getTitle(), post.getContent(),dto.postSubject, post.getVisibility(), urls.split(","));
         }
         throw new AccessDeniedException("User not authenticated");
+    }
+
+    
+    public PostDto getPostById(Long postId) {
+        Post post = postRepository.findById(postId).orElseThrow(()-> new ResourceNotFoundException("Post Not Found") );
+        return new PostDto(post.getTitle(), post.getContent(), post.getSubject().split(","), post.getVisibility(), post.getMediaUrl().split(","));
     }
 }
