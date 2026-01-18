@@ -9,6 +9,7 @@ import com.zone01oujda.moblogging.user.enums.Gender;
 import com.zone01oujda.moblogging.user.enums.ProfileType;
 import com.zone01oujda.moblogging.user.enums.Role;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -58,13 +59,13 @@ public class User {
 
     private LocalDateTime modifiedAt;
 
-    @OneToMany(mappedBy = "creator")
+    @OneToMany(mappedBy = "creator", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Post> posts;
 
-    @OneToMany(mappedBy = "receiver")
+    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Notification> notifications;
 
-    @OneToMany( mappedBy = "creator")
+    @OneToMany( mappedBy = "creator", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments;
 
 

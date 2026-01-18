@@ -13,11 +13,11 @@ public class Comment {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User creator;
 
     @ManyToOne
-    @JoinColumn(name = "post_id")
+    @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
     @Column(columnDefinition= "TEXT", nullable= false)
@@ -33,13 +33,16 @@ public class Comment {
 
     private LocalDateTime modifiedAt;
 
-    @OneToMany(mappedBy="parent")
+    private Boolean modified;
+    
+    @OneToMany(mappedBy="parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> children;
 
     protected Comment() {
         this.createdAt = LocalDateTime.now();
         this.hidden = false;
-        this.modifiedAt = null;
+        this.modifiedAt = LocalDateTime.now();
+        this.modified = false;
     }
 
     public Comment(String content, Comment parent) {
@@ -71,7 +74,7 @@ public class Comment {
         return hidden;
     }
 
-    private LocalDateTime getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
@@ -98,9 +101,27 @@ public class Comment {
         this.hidden =  hidden;
     }
 
-    private void setModifiededAt(LocalDateTime modifiedAt) {
+    public void setModifiedAt(LocalDateTime modifiedAt) {
         this.modifiedAt =  modifiedAt;
     }
 
+    public LocalDateTime getModifiedAt() {
+        return this.modifiedAt;
+    }
 
+    public void setModified(Boolean modified) {
+        this.modified =  modified;
+    }
+
+    public Boolean getModified() {
+        return this.modified;
+    }
+
+    public List<Comment> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<Comment> children) {
+        this.children = children;
+    }
 }

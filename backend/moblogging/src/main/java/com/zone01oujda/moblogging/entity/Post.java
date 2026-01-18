@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.zone01oujda.moblogging.post.enums.PostVisibility;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,6 +37,7 @@ public class Post {
     @Enumerated(EnumType.STRING)
     private PostVisibility visibility;
 
+    @Column(columnDefinition = "TEXT")
     private String mediaUrl;
 
     private LocalDateTime createdAt;
@@ -47,7 +49,7 @@ public class Post {
     @JoinColumn(name = "user_id", nullable=false)
     private User creator;
 
-    @OneToMany(mappedBy = "post")
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments;
 
     protected  Post() {
