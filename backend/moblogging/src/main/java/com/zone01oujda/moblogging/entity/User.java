@@ -18,8 +18,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import lombok.Data;
-@Data
 @Entity
 @Table(name = "users")
 public class User {
@@ -58,7 +56,8 @@ public class User {
 
     private LocalDateTime createdAt;
 
-    // // Relations
+    private LocalDateTime modifiedAt;
+
     @OneToMany(mappedBy = "creator")
     private List<Post> posts;
 
@@ -69,7 +68,6 @@ public class User {
     private List<Comment> comments;
 
 
-    // Constructors
     protected User() {
         this.createdAt = LocalDateTime.now();
         this.blocked = false;
@@ -84,7 +82,135 @@ public class User {
         this.role = Role.USER; 
         this.profileType = ProfileType.PUBLIC;
         this.posts = new  ArrayList<>();
+        this.notifications = new  ArrayList<>();
+        this.comments = new  ArrayList<>();
     }
 
-    
+    public Long getId() {
+        return id;
+    }
+
+    public Boolean getBlocked() {
+        return blocked;
+    }
+
+    public void setBlocked(Boolean blocked) {
+        this.blocked = blocked;
+    }
+
+    public Boolean getBanned() {
+        return banned;
+    }
+
+    public void setBanned(Boolean banned) {
+        this.banned = banned;
+    }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public ProfileType getProfileType() {
+        return profileType;
+    }
+
+    public void setProfileType(ProfileType profileType) {
+        this.profileType = profileType;
+    }
+
+    public List<Post> getPosts(){
+        return this.posts;
+    }
+
+    public void setPosts(List<Post> posts) {
+        this.posts = posts;
+    }
+
+    public List<Notification> getNotifications() {
+        return notifications;
+    }
+
+    public void setNotifications(List<Notification> notifications) {
+        this.notifications = notifications;
+    }
+
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
+    }
+
+    public LocalDateTime getModifiedAt()  {
+        return modifiedAt;
+    }
+
+    public void setModifiededAt(LocalDateTime modifiedAt) {
+        this.modifiedAt = modifiedAt;
+    }
+
 }

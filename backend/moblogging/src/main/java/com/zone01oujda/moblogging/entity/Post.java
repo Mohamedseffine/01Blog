@@ -18,8 +18,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-@Data
 @Entity
 @Table(name = "posts")
 public class Post {
@@ -39,7 +37,6 @@ public class Post {
     private PostVisibility visibility;
 
     private String mediaUrl;
-    private String mediaType; 
 
     private LocalDateTime createdAt;
 
@@ -58,13 +55,84 @@ public class Post {
         hidden = false;
     }
 
-    public Post(String subject, String content, String mediaUrl, String mediaType, PostVisibility visibility, String title) {
+    public Post(String subject, String content, String mediaUrl, PostVisibility visibility, String title) {
         this();
         this.subject = subject;
         this.content = content;
         this.mediaUrl = mediaUrl;
-        this.mediaType = mediaType;
         this.visibility = visibility;
         this.title = title;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Boolean getHidden() {
+        return hidden;
+    }
+
+    public void setHidden(Boolean hidden){
+        this.hidden = hidden;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContetn(String content) {
+        this.content = content;
+    }
+
+    public String getMediaUrl() {
+        return mediaUrl;
+    }
+
+    public void setMediaUrl(String mediaUrl) {
+        this.mediaUrl = mediaUrl;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public PostVisibility getVisibility() {
+        return visibility;
+    }
+
+    public void setPostVisibility(PostVisibility visibility) {
+        this.visibility = visibility;
+    }
+
+    public User getCreator() {
+        return creator;
+    }
+
+    public void setCreator(User creator) {
+        this.creator = creator;
+    }
+
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
     }
 }

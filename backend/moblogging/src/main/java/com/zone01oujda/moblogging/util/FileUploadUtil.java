@@ -28,9 +28,10 @@ public class FileUploadUtil {
     public String upload(MultipartFile file) {
         try{
             String type = mediaValidator.detectMimeType(file);
-            System.out.println(type);
+            String subDir = type.startsWith("image") ? "/images" : "/videos";
             if (type.startsWith("image") || type.startsWith("video")) {
-                Path path = Paths.get("." + uploadDir);
+                
+                Path path = Paths.get("." + uploadDir + subDir );
                 if (!Files.exists(path)) {
                     Files.createDirectories(path);
                 }

@@ -13,9 +13,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Data;
 
-@Data
+
 @Entity
 @Table(name="notifications")
 public class Notification {
@@ -48,4 +47,43 @@ public class Notification {
         this.content = content;
     }
 
+    public Long getId() {
+        return id;
+    }
+    
+    public User getReciever() {
+        return receiver;
+    }
+
+    public void setReciever(User reciever) {
+        this.receiver = reciever;
+    }
+
+    public Boolean getState() {
+        return state;
+    }
+
+    public void setState(Boolean state) {
+        this.state = state;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContet(String content) {
+        this.content = content;
+    }
+
+    public NotificationType getType() {
+        return type;
+    }
+
+    public void setType(NotificationType type) {
+        this.type = type;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 }

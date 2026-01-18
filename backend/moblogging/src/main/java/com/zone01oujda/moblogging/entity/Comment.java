@@ -4,9 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
-@Data
 @Entity
 @Table(name="comments")
 public class Comment {
@@ -33,12 +31,15 @@ public class Comment {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime modifiedAt;
+
     @OneToMany(mappedBy="parent")
     private List<Comment> children;
 
     protected Comment() {
         this.createdAt = LocalDateTime.now();
         this.hidden = false;
+        this.modifiedAt = null;
     }
 
     public Comment(String content, Comment parent) {
@@ -46,5 +47,60 @@ public class Comment {
         this.content = content;
         this.parent = parent;
     }
-    
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public Comment getParent() {
+        return parent;
+    }
+
+    public User getCreator() {
+        return creator;
+    }
+    public Post getPost() {
+        return post;
+    }
+
+    public Boolean getHidden() {
+        return hidden;
+    }
+
+    private LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public void setParent(Comment parent) {
+        this.parent = parent;
+    }
+
+    public void setCreator(User creator) {
+        this.creator = creator;
+    }
+    public void setPost(Post post) {
+        this.post =  post;
+    }
+
+    public void setHidden(Boolean hidden) {
+        this.hidden =  hidden;
+    }
+
+    private void setModifiededAt(LocalDateTime modifiedAt) {
+        this.modifiedAt =  modifiedAt;
+    }
+
+
 }

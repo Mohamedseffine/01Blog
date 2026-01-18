@@ -60,8 +60,8 @@ public class PostService {
             if (dto.postSubject.length == 0) {
                 throw new RuntimeException("the content is empty");
             }
-            String types ="";
-            Post post = new Post(String.join(",", dto.postSubject) ,dto.postContent,urls, types, dto.postVisibility, dto.postTitle);
+
+            Post post = new Post(String.join(",", dto.postSubject) ,dto.postContent,urls, dto.postVisibility, dto.postTitle);
             post.setCreator(user);
             post.setMediaUrl(urls);
             postRepository.save(post);
@@ -71,7 +71,7 @@ public class PostService {
         throw new AccessDeniedException("User not authenticated");
     }
 
-    
+
     public PostDto getPostById(Long postId) {
         Post post = postRepository.findById(postId).orElseThrow(()-> new ResourceNotFoundException("Post Not Found") );
         return new PostDto(post.getTitle(), post.getContent(), post.getSubject().split(","), post.getVisibility(), post.getMediaUrl().split(","));
