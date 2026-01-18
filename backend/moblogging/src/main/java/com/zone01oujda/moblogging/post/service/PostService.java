@@ -1,11 +1,15 @@
 package com.zone01oujda.moblogging.post.service;
 
 
+import java.util.List;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.zone01oujda.moblogging.comment.dto.CommentDto;
+import com.zone01oujda.moblogging.comment.util.CommentMapper;
 import com.zone01oujda.moblogging.entity.Post;
 import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.exception.AccessDeniedException;
@@ -64,9 +68,11 @@ public class PostService {
             Post post = new Post(String.join(",", dto.postSubject) ,dto.postContent,urls, dto.postVisibility, dto.postTitle);
             post.setCreator(user);
             post.setMediaUrl(urls);
-            postRepository.save(post);
-    
-            return new PostDto(post.getTitle(), post.getContent(),dto.postSubject, post.getVisibility(), urls.split(","));
+            post = postRepository.save(post);
+            PostDto pDto = new PostDto(post.getTitle(), post.getContent(),dto.postSubject, post.getVisibility(), urls.split(","));
+            pDto.setId(post.getId());
+            pDto.setCreatorUsername(post.getCreator().getUsername());
+            return pDto;
         }
         throw new AccessDeniedException("User not authenticated");
     }
@@ -74,6 +80,13 @@ public class PostService {
 
     public PostDto getPostById(Long postId) {
         Post post = postRepository.findById(postId).orElseThrow(()-> new ResourceNotFoundException("Post Not Found") );
-        return new PostDto(post.getTitle(), post.getContent(), post.getSubject().split(","), post.getVisibility(), post.getMediaUrl().split(","));
+        List<CommentDto> dtos = post.getComments().stream()
+                .map(CommentMapper::toDto)
+                .toList();
+        PostDto dto = new PostDto(post.getTitle(), post.getContent(), post.getSubject().split(","), post.getVisibility(), post.getMediaUrl().split(","));
+        dto.setId(postId);
+        dto.setCreatorUsername(post.getCreator().getUsername());
+        dto.setComments(dtos);
+        return dto;
     }
 }
