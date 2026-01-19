@@ -27,6 +27,34 @@ public class ApiResponseBuilder<T> {
         return this;
     }
     
+    /**
+     * Build a successful response with a message
+     */
+    public ApiResponse<T> buildSuccess(String message) {
+        return new ApiResponse<>(true, message, data, null);
+    }
+    
+    /**
+     * Build a successful response with message and data
+     */
+    public ApiResponse<T> buildSuccess(String message, T data) {
+        return new ApiResponse<>(true, message, data, null);
+    }
+    
+    /**
+     * Build an error response with a message
+     */
+    public ApiResponse<T> buildError(String message) {
+        return new ApiResponse<>(false, message, null, errors);
+    }
+    
+    /**
+     * Build an error response with message and errors
+     */
+    public ApiResponse<T> buildError(String message, Object errors) {
+        return new ApiResponse<>(false, message, null, errors);
+    }
+    
     public ApiResponse<T> build() {
         return new ApiResponse<>(success, message, data, errors);
     }

@@ -10,41 +10,76 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+/**
+ * DTO for user registration
+ */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class RegisterRequestDto {
-    @NotBlank(message = "The firstname is empty")
-    @Size(min = 3, max = 15)
+    
+    /**
+     * First name (required, 3-15 characters)
+     */
+    @NotBlank(message = "First name is required")
+    @Size(min = 3, max = 15, message = "First name must be 3-15 characters")
     public String firstName;
 
-    @NotBlank(message = "The lastname is empty")
-    @Size(min = 3, max = 15)
+    /**
+     * Last name (required, 3-15 characters)
+     */
+    @NotBlank(message = "Last name is required")
+    @Size(min = 3, max = 15, message = "Last name must be 3-15 characters")
     public String lastName;
 
-    @NotBlank(message = "The username is empty")
-    @Size(min = 3, max = 15)
+    /**
+     * Username (required, 3-15 characters, must be unique)
+     */
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 15, message = "Username must be 3-15 characters")
     public String username;
 
-    @NotBlank(message = "The email is empty")
-    @Email(message="email not valid")
+    /**
+     * Email address (required, must be valid and unique)
+     */
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be valid")
     public String email;
 
-    @NotBlank(message = "The password is empty")
-    @Size(min = 10, max = 32)
+    /**
+     * Password (required, 10-32 characters)
+     */
+    @NotBlank(message = "Password is required")
+    @Size(min = 10, max = 32, message = "Password must be 10-32 characters")
     public String password;
 
-    @NotBlank(message = "The password is empty")
-    @Size(min = 10, max = 32)
+    /**
+     * Password confirmation (must match password)
+     */
+    @NotBlank(message = "Confirm password is required")
+    @Size(min = 10, max = 32, message = "Password must be 10-32 characters")
     public String confirmPassword;
 
-    @Past(message="the birthdate must be in past")
+    /**
+     * Date of birth (must be in the past)
+     */
+    @Past(message = "Birth date must be in the past")
     public LocalDate birthDate;
 
-    @NotNull(message = "The gender is empty")
+    /**
+     * Gender (required)
+     */
+    @NotNull(message = "Gender is required")
     public Gender gender;
 
-    @NotNull(message = "there is no profile type")
+    /**
+     * Profile type (required)
+     */
+    @NotNull(message = "Profile type is required")
     public ProfileType profileType;
 }
 

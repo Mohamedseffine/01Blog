@@ -5,24 +5,67 @@ import java.util.List;
 import com.zone01oujda.moblogging.comment.dto.CommentDto;
 import com.zone01oujda.moblogging.post.enums.PostVisibility;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+/**
+ * DTO for post response
+ */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class PostDto {
-    public String creatorUsername;
+    
+    /**
+     * Post ID
+     */
     public Long id;
+    
+    /**
+     * Username of the post creator
+     */
+    public String creatorUsername;
+    
+    /**
+     * Post title
+     */
     public String postTitle;
+    
+    /**
+     * Post content/body
+     */
     public String postContent;
+    
+    /**
+     * Post subjects/tags
+     */
     public String[] postSubject;
+    
+    /**
+     * Post visibility level
+     */
     public PostVisibility postVisibility;
+    
+    /**
+     * Media file URLs
+     */
     public String[] medias;
+    
+    /**
+     * List of comments on the post
+     */
     public List<CommentDto> comments;
 
-    public PostDto(String postTitle, String postContent, String[] postSubject, PostVisibility postVisibility, String[] medias){
-        this.medias = medias;
-        this.postContent=postContent;
+    /**
+     * Constructor with basic post data
+     */
+    public PostDto(String postTitle, String postContent, String[] postSubject, 
+                   PostVisibility postVisibility, String[] medias) {
         this.postTitle = postTitle;
-        this.postSubject= postSubject;
-        this.postVisibility=postVisibility;
+        this.postContent = postContent;
+        this.postSubject = postSubject;
+        this.postVisibility = postVisibility;
+        this.medias = medias;
     }
 }

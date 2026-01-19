@@ -2,8 +2,6 @@ package com.zone01oujda.moblogging.comment.service;
 
 import java.util.List;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.zone01oujda.moblogging.comment.dto.CommentDto;
@@ -13,55 +11,102 @@ import com.zone01oujda.moblogging.comment.util.CommentMapper;
 import com.zone01oujda.moblogging.entity.Comment;
 import com.zone01oujda.moblogging.entity.Post;
 import com.zone01oujda.moblogging.entity.User;
+import com.zone01oujda.moblogging.exception.AccessDeniedException;
 import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
+import com.zone01oujda.moblogging.util.SecurityUtil;
 
+/**
+ * Service class for comment operations
+ */
 @Service
 public class CommentService {
 
-    private UserRepository userRepository;
-    private PostRepository postRepository;
-    private CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
 
     public CommentService(UserRepository userRepository, PostRepository postRepository,
             CommentRepository commentRepository) {
-        this.commentRepository = commentRepository;
-        this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
     }
 
+    /**
+     * Create a new comment on a post
+     * @param dto the comment creation data
+     * @return CommentDto with created comment details
+     * @throws AccessDeniedException if user is not authenticated
+     * @throws ResourceNotFoundException if post or parent comment not found
+     */
     public CommentDto create(CreateCommentDto dto) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userRepository.findByUsernameOrEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("the user not found"));
-        Comment parent = null;
-        if (dto.getParentId() != 0) {
-            parent = commentRepository.findById(dto.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Comment not found"));
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null) {
+            throw new AccessDeniedException("User not authenticated");
         }
-        Post post = postRepository.findById(dto.getPostId())
-                .orElseThrow(() -> new RuntimeException("Cannot find post"));
-        Comment comment = new Comment(dto.getContent(), parent);
+
+        // Get authenticated user
+        User user = userRepository.findByUsernameOrEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Get parent comment if replying to another comment
+        Comment parent = null;
+        if (dto.parentId != null && dto.parentId != 0) {
+            parent = commentRepository.findById(dto.parentId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent comment not found"));
+        }
+
+        // Get post that comment belongs to
+        Post post = postRepository.findById(dto.postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+
+        // Create and save comment
+        Comment comment = new Comment(dto.content, parent);
         comment.setCreator(user);
         comment.setPost(post);
         comment = commentRepository.save(comment);
-        return new CommentDto(comment.getId(), comment.getParent() != null ? comment.getParent().getId() : 0, comment.getContent(), comment.getHidden(),
-                comment.getCreatedAt(), comment.getModifiedAt(), comment.getModified(), comment.getPost().getId());
+
+        return convertToDto(comment);
     }
 
-    public CommentDto getComments(Long postId) {
-        Comment comment = commentRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post Not Found"));
-        CommentDto dto = new CommentDto(comment.getId(), comment.getParent() != null ? comment.getParent().getId() : 0, comment.getContent(),
-                comment.getHidden(), comment.getCreatedAt(), comment.getModifiedAt(), comment.getModified(),
-                comment.getPost().getId());
+    /**
+     * Get comment by ID with child comments
+     * @param commentId the comment ID
+     * @return CommentDto with comment details and child comments
+     * @throws ResourceNotFoundException if comment not found
+     */
+    public CommentDto getComments(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
-        List<CommentDto> dtos = comment.getChildren().stream()
+        return convertToDto(comment);
+    }
+
+    /**
+     * Convert Comment entity to CommentDto
+     * @param comment the comment entity
+     * @return CommentDto
+     */
+    private CommentDto convertToDto(Comment comment) {
+        CommentDto dto = new CommentDto(
+            comment.getId(),
+            comment.getParent() != null ? comment.getParent().getId() : 0,
+            comment.getContent(),
+            comment.getHidden(),
+            comment.getCreatedAt(),
+            comment.getModifiedAt(),
+            comment.getModified(),
+            comment.getPost().getId()
+        );
+
+        // Add child comments
+        List<CommentDto> childDtos = comment.getChildren().stream()
                 .map(CommentMapper::toDto)
                 .toList();
-        dto.setChildren(dtos);
+        dto.setChildren(childDtos);
+
         return dto;
     }
-
 }
