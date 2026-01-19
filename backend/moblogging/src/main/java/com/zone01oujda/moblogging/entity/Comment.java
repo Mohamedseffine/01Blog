@@ -51,6 +51,13 @@ public class Comment {
         this.parent = parent;
     }
 
+    public Comment(String content, User creator, Post post) {
+        this();
+        this.content = content;
+        this.creator = creator;
+        this.post = post;
+    }
+
     public Long getId() {
         return id;
     }

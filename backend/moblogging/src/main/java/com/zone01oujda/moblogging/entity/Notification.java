@@ -51,12 +51,12 @@ public class Notification {
         return id;
     }
     
-    public User getReciever() {
+    public User getReceiver() {
         return receiver;
     }
 
-    public void setReciever(User reciever) {
-        this.receiver = reciever;
+    public void setReceiver(User receiver) {
+        this.receiver = receiver;
     }
 
     public Boolean getState() {
@@ -71,7 +71,7 @@ public class Notification {
         return content;
     }
 
-    public void setContet(String content) {
+    public void setContent(String content) {
         this.content = content;
     }
 

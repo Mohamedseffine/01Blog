@@ -52,6 +52,12 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<React> reacts;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SavedPost> savedPosts;
+
     protected  Post() {
         createdAt = LocalDateTime.now();
         hidden = false;
@@ -94,7 +100,7 @@ public class Post {
         return content;
     }
 
-    public void setContetn(String content) {
+    public void setContent(String content) {
         this.content = content;
     }
 
@@ -136,5 +142,21 @@ public class Post {
 
     public void setComments(List<Comment> comments) {
         this.comments = comments;
+    }
+
+    public List<React> getReacts() {
+        return reacts;
+    }
+
+    public void setReacts(List<React> reacts) {
+        this.reacts = reacts;
+    }
+
+    public List<SavedPost> getSavedPosts() {
+        return savedPosts;
+    }
+
+    public void setSavedPosts(List<SavedPost> savedPosts) {
+        this.savedPosts = savedPosts;
     }
 }
