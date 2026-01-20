@@ -117,6 +117,11 @@ export class RegisterComponent {
       this.error.set('Passwords do not match');
       return;
     }
+    // enforce backend password length constraint (10-32 chars)
+    if (!model.password || model.password.length < 10 || model.password.length > 32) {
+      this.error.set('Password must be between 10 and 32 characters');
+      return;
+    }
     this.loading.set(true);
     const payload = { ...model };
     // ensure birthDate is ISO string if set
