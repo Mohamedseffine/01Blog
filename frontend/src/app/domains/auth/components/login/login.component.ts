@@ -1,6 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Router } from '@angular/router';
+import { WebSocketService } from '@core/services/websocket.service';
+import { NotificationService } from '@domains/notification/services/notification.service';
 
 @Component({
   selector: 'app-login',
@@ -17,15 +21,16 @@ import { FormsModule } from '@angular/forms';
               </h3>
             </div>
             <div class="card-body p-4">
-              <form>
+              <form (submit)="submit($event)">
                 <div class="mb-3">
-                  <label for="email" class="form-label">Email Address</label>
+                  <label for="email" class="form-label">Username or Email</label>
                   <input 
-                    type="email" 
+                    type="text" 
                     class="form-control form-control-lg" 
                     id="email"
-                    placeholder="you@example.com"
-                    [(ngModel)]="email"
+                    placeholder="username or you@example.com"
+                    [ngModel]="email()"
+                    (ngModelChange)="email.set($event)"
                     name="email"
                   >
                 </div>
@@ -37,7 +42,8 @@ import { FormsModule } from '@angular/forms';
                     class="form-control form-control-lg" 
                     id="password"
                     placeholder="••••••••"
-                    [(ngModel)]="password"
+                    [ngModel]="password()"
+                    (ngModelChange)="password.set($event)"
                     name="password"
                   >
                 </div>
@@ -47,7 +53,8 @@ import { FormsModule } from '@angular/forms';
                     type="checkbox" 
                     class="form-check-input" 
                     id="remember"
-                    [(ngModel)]="rememberMe"
+                    [ngModel]="rememberMe()"
+                    (ngModelChange)="rememberMe.set($event)"
                     name="rememberMe"
                   >
                   <label class="form-check-label" for="remember">
@@ -55,8 +62,10 @@ import { FormsModule } from '@angular/forms';
                   </label>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">
-                  <i class="bi bi-box-arrow-in-right"></i> Sign In
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" [disabled]="loading()">
+                  <i class="bi bi-box-arrow-in-right"></i>
+                  <span *ngIf="!loading()">Sign In</span>
+                  <span *ngIf="loading()">Signing in...</span>
                 </button>
               </form>
 
@@ -85,7 +94,35 @@ import { FormsModule } from '@angular/forms';
   `,
 })
 export class LoginComponent {
-  email = '';
-  password = '';
-  rememberMe = false;
+  email = signal('');
+  password = signal('');
+  rememberMe = signal(false);
+  loading = signal(false);
+
+  constructor(private auth: AuthService, private router: Router,
+              private ws: WebSocketService, private notificationService: NotificationService) {}
+
+  submit(e: Event) {
+    e.preventDefault();
+    const email = this.email().trim();
+    const password = this.password();
+    if (!email || !password) return;
+    this.loading.set(true);
+    this.auth.login({ usernameOrEmail: email, password })
+      .subscribe({
+        next: (res) => {
+          // backend returns ApiResponse<AuthResponseDto>
+          const token = res?.data?.token || res?.data?.accessToken || res?.data;
+          if (token) {
+            localStorage.setItem('token', token);
+            // connect websocket after login
+            this.ws.connect(token, (data) => this.notificationService.onNotificationReceived(data));
+          }
+          this.router.navigateByUrl('/');
+        },
+        error: () => {
+          this.loading.set(false);
+        }
+      });
+  }
 }

@@ -64,10 +64,9 @@ public class NotificationSocketHandler {
      * @param userId the connected user ID
      */
     @MessageMapping("/users/connect")
-    public void handleUserConnect(String userId) {
+    public void handleUserConnect(Long userId) {
         try {
-            Long id = Long.parseLong(userId);
-            connectedUsers.compute(id, (k, v) -> v == null ? 1 : v + 1);
+            connectedUsers.compute(userId, (k, v) -> v == null ? 1 : v + 1);
         } catch (NumberFormatException e) {
             // Log invalid user ID
         }
@@ -79,10 +78,10 @@ public class NotificationSocketHandler {
      * @param userId the disconnected user ID
      */
     @MessageMapping("/users/disconnect")
-    public void handleUserDisconnect(String userId) {
+    public void handleUserDisconnect(Long userId) {
         try {
-            Long id = Long.parseLong(userId);
-            connectedUsers.computeIfPresent(id, (k, v) -> v > 1 ? v - 1 : null);
+            
+            connectedUsers.computeIfPresent(userId, (k, v) -> v > 1 ? v - 1 : null);
         } catch (NumberFormatException e) {
             // Log invalid user ID
         }

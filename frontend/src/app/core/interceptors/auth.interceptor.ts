@@ -1,6 +1,6 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { AuthService } from '@domains/auth/services/auth.service';
+import { AuthService } from '@core/services/auth.service';
 
 /**
  * HTTP Interceptor for attaching JWT token to all requests
