@@ -27,6 +27,9 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration}")
     private Long jwtAccessExpiration;
 
+    @Value("${jwt.refresh-expiration}")
+    private Long jwtRefreshExpiration;
+
     private SecretKey secretKey ;
 
     @PostConstruct
@@ -36,16 +39,28 @@ public class JwtTokenProvider {
 
     public String generateAccesToken(User user) {
         Map<String,Object> claims = new HashMap<>();
-        claims.put("sub", user.getUsername());
-        claims.put("exp", new Date(System.currentTimeMillis() + jwtAccessExpiration));
         claims.put("fnm",user.getFirstName()+user.getLastName());
         claims.put("iat",new Date());
         claims.put("iss","moblogging");
         claims.put("UserId", user.getId());
         claims.put("email", user.getEmail());
         claims.put("role", user.getRole());
-        return Jwts.builder().setClaims(claims)
-        .signWith(secretKey, SignatureAlgorithm.HS256).compact();
+        return Jwts.builder()
+        .setSubject(user.getUsername())
+        .setClaims(claims)
+        .setIssuedAt(new Date())
+        .setExpiration(new Date(System.currentTimeMillis() + jwtAccessExpiration))
+        .signWith(secretKey, SignatureAlgorithm.HS256)
+        .compact();
+    }
+
+    public String generateRefreshToken(User user) {
+        return Jwts.builder()
+            .setSubject(user.getUsername())
+            .setIssuedAt(new Date())
+            .setExpiration(new Date(System.currentTimeMillis() + jwtRefreshExpiration))
+            .signWith(secretKey, SignatureAlgorithm.HS256)
+            .compact();
     }
 
     public boolean validateToken(String token) {

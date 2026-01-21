@@ -34,12 +34,24 @@ export class AuthService {
     return this.http.post(`${this.base}/register`, payload);
   }
 
+  refresh(refreshToken: string): Observable<any> {
+    return this.http.post(`${this.base}/refresh`, { refreshToken });
+  }
+
   getToken(): string | null {
     return localStorage.getItem('token');
   }
 
   setToken(token: string) {
     localStorage.setItem('token', token);
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refreshToken');
+  }
+
+  setRefreshToken(refreshToken: string) {
+    localStorage.setItem('refreshToken', refreshToken);
   }
 
   logout() {

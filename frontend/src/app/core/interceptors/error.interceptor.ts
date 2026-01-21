@@ -1,24 +1,46 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, throwError, switchMap, of } from 'rxjs';
+import { AuthService } from '@core/services/auth.service';
 
 /**
- * HTTP Interceptor for global error handling
+ * HTTP Interceptor for global error handling with automatic token refresh
  */
 export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
   const router = inject(Router);
+  const auth = inject(AuthService);
 
   return next(req).pipe(
-    catchError(error => {
+    catchError((error: any) => {
       if (error.status === 401) {
-        // Unauthorized - redirect to login
-        router.navigate(['/auth/login']);
+        const refresh = auth.getRefreshToken();
+        if (!refresh) {
+          router.navigate(['/auth/login']);
+          return throwError(() => error);
+        }
+
+        // try refreshing token
+        return auth.refresh(refresh).pipe(
+          switchMap((res: any) => {
+            const access = res?.data?.accessToken || res?.data?.accessToken;
+            if (access) {
+              auth.setToken(access);
+              // retry original request with new token
+              const cloned = req.clone({ setHeaders: { Authorization: `Bearer ${access}` } });
+              return next(cloned);
+            }
+            router.navigate(['/auth/login']);
+            return throwError(() => error);
+          }),
+          catchError((e) => {
+            router.navigate(['/auth/login']);
+            return throwError(() => e);
+          })
+        );
       } else if (error.status === 403) {
-        // Forbidden
         router.navigate(['/']);
       } else if (error.status === 500) {
-        // Server error
         console.error('Server error:', error);
       }
 

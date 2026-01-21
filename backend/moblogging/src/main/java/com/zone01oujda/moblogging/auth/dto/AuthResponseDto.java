@@ -4,8 +4,11 @@ import lombok.Data;
 
 @Data
 public class AuthResponseDto {
-    public String token;
-    public AuthResponseDto(String token) {
-        this.token = token;
+    private String accessToken;
+    private String refreshToken;
+
+    public AuthResponseDto(String accessToken, String refreshToken) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
     }
 }

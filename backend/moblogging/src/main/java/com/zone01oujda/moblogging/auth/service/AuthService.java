@@ -76,9 +76,10 @@ public class AuthService {
             user.setRole(Role.USER);
 
             User savedUser = userRepository.save(user);
-            String token = tokenProvider.generateAccesToken(savedUser);
+            String access = tokenProvider.generateAccesToken(savedUser);
+            String refresh = tokenProvider.generateRefreshToken(savedUser);
 
-            return new AuthResponseDto(token);
+            return new AuthResponseDto(access, refresh);
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException("Email or username already exists");
         }
@@ -103,11 +104,21 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
             // Generate JWT token
-            String token = tokenProvider.generateAccesToken(user);
+            String access = tokenProvider.generateAccesToken(user);
+            String refresh = tokenProvider.generateRefreshToken(user);
 
-            return new AuthResponseDto(token);
+            return new AuthResponseDto(access, refresh);
         } catch (org.springframework.security.core.AuthenticationException e) {
             throw new BadRequestException("Invalid username/email or password");
         }
+    }
+
+    /**
+     * Find user by username or email
+     * @param username username or email
+     * @return User or null
+     */
+    public User findUserByUsername(String username) {
+        return userRepository.findByUsernameOrEmail(username).orElse(null);
     }
 }
