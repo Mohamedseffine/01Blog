@@ -1,9 +1,31 @@
 package com.zone01oujda.moblogging.admin.service;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import com.zone01oujda.moblogging.admin.dto.AdminDashboardDto;
+import com.zone01oujda.moblogging.admin.dto.AdminReportDto;
+import com.zone01oujda.moblogging.admin.dto.AdminUserDto;
+import com.zone01oujda.moblogging.admin.dto.BanRequestDto;
+import com.zone01oujda.moblogging.admin.repository.BanRepository;
+import com.zone01oujda.moblogging.comment.repository.CommentRepository;
+import com.zone01oujda.moblogging.entity.Ban;
+import com.zone01oujda.moblogging.entity.Post;
+import com.zone01oujda.moblogging.entity.Report;
+import com.zone01oujda.moblogging.entity.User;
+import com.zone01oujda.moblogging.exception.AccessDeniedException;
 import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
+import com.zone01oujda.moblogging.post.repository.PostRepository;
+import com.zone01oujda.moblogging.report.enums.ReportStatus;
+import com.zone01oujda.moblogging.report.repository.ReportRepository;
+import com.zone01oujda.moblogging.user.enums.Role;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
+import com.zone01oujda.moblogging.util.SecurityUtil;
 
 /**
  * Service class for admin operations
@@ -12,31 +34,73 @@ import com.zone01oujda.moblogging.user.repository.UserRepository;
 public class AdminService {
     
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final ReportRepository reportRepository;
+    private final BanRepository banRepository;
 
-    public AdminService(UserRepository userRepository) {
+    public AdminService(UserRepository userRepository, PostRepository postRepository,
+            CommentRepository commentRepository, ReportRepository reportRepository,
+            BanRepository banRepository) {
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
+        this.reportRepository = reportRepository;
+        this.banRepository = banRepository;
     }
 
     /**
      * Get dashboard statistics
      * @return dashboard data
      */
-    public java.util.Map<String, Object> getDashboardStats() {
-        java.util.Map<String, Object> stats = new java.util.HashMap<>();
-        stats.put("totalUsers", userRepository.count());
-        stats.put("timestamp", java.time.LocalDateTime.now());
-        return stats;
+    public AdminDashboardDto getDashboardStats() {
+        return new AdminDashboardDto(
+            userRepository.count(),
+            postRepository.count(),
+            commentRepository.count(),
+            reportRepository.count(),
+            userRepository.countByBannedTrue(),
+            reportRepository.countByStatus(ReportStatus.PENDING)
+        );
     }
+
+    /**
+     * Get paginated list of users
+     * @param page page number
+     * @param size page size
+     * @return page of admin user DTOs
+     */
+    public Page<AdminUserDto> getAllUsers(int page, int size) {
+        return userRepository.findAll(PageRequest.of(page, size))
+            .map(user -> new AdminUserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole(),
+                user.isBanned(),
+                user.isBlocked(),
+                user.getCreatedAt()
+            ));
+    }
+    
 
     /**
      * Ban a user by ID
      * @param userId the user ID to ban
      * @throws ResourceNotFoundException if user not found
      */
-    public void banUser(Long userId) {
-        com.zone01oujda.moblogging.entity.User user = userRepository.findById(userId)
+    public void banUser(Long userId, BanRequestDto banRequest) {
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User admin = getCurrentAdmin();
+        Ban ban = new Ban(user, admin, banRequest.getReason());
+        boolean isPermanent = Boolean.TRUE.equals(banRequest.getIsPermanent());
+        ban.setIsPermanent(isPermanent);
+        if (!isPermanent && banRequest.getDurationDays() != null && banRequest.getDurationDays() > 0) {
+            ban.setUnbannedAt(LocalDateTime.now().plusDays(banRequest.getDurationDays()));
+        }
         user.setBanned(true);
+        banRepository.save(ban);
         userRepository.save(user);
     }
 
@@ -46,9 +110,93 @@ public class AdminService {
      * @throws ResourceNotFoundException if user not found
      */
     public void unbanUser(Long userId) {
-        com.zone01oujda.moblogging.entity.User user = userRepository.findById(userId)
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setBanned(false);
         userRepository.save(user);
+        banRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
+            .ifPresent(ban -> {
+                ban.setUnbannedAt(LocalDateTime.now());
+                banRepository.save(ban);
+            });
+    }
+
+    /**
+     * Delete post by ID
+     * @param postId the post ID to delete
+     */
+    public void deletePost(Long postId) {
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        postRepository.delete(post);
+    }
+
+    /**
+     * Get paginated list of reports
+     * @param page page number
+     * @param size page size
+     * @return page of admin report DTOs
+     */
+    public Page<AdminReportDto> getReports(int page, int size) {
+        return reportRepository.findAll(PageRequest.of(page, size))
+            .map(this::toAdminReportDto);
+    }
+
+    /**
+     * Get system stats summary
+     * @return stats map
+     */
+    public Map<String, Object> getStats() {
+        Map<String, Object> stats = new HashMap<>();
+        Map<String, Long> reportsByStatus = new HashMap<>();
+        for (ReportStatus status : ReportStatus.values()) {
+            reportsByStatus.put(status.name(), reportRepository.countByStatus(status));
+        }
+        Map<String, Long> usersByRole = new HashMap<>();
+        for (Role role : Role.values()) {
+            usersByRole.put(role.name(), userRepository.countByRole(role));
+        }
+        stats.put("reportsByStatus", reportsByStatus);
+        stats.put("usersByRole", usersByRole);
+        return stats;
+    }
+
+    private User getCurrentAdmin() {
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        return userRepository.findByUsernameOrEmail(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Admin user not found"));
+    }
+
+    private AdminReportDto toAdminReportDto(Report report) {
+        String contentType = "UNKNOWN";
+        Long contentId = null;
+        String reportedUsername = null;
+        if (report.getPost() != null) {
+            contentType = "POST";
+            contentId = report.getPost().getId();
+            if (report.getPost().getCreator() != null) {
+                reportedUsername = report.getPost().getCreator().getUsername();
+            }
+        } else if (report.getReportedUser() != null) {
+            contentType = "USER";
+            contentId = report.getReportedUser().getId();
+            reportedUsername = report.getReportedUser().getUsername();
+        }
+
+        return new AdminReportDto(
+            report.getId(),
+            contentType,
+            contentId,
+            report.getReason(),
+            report.getStatus(),
+            report.getDescription(),
+            report.getCreatedAt(),
+            report.getResolvedAt(),
+            report.getReporter() != null ? report.getReporter().getUsername() : null,
+            reportedUsername
+        );
     }
 }

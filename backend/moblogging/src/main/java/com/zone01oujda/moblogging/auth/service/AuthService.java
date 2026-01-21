@@ -7,7 +7,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.zone01oujda.moblogging.auth.dto.AuthResponseDto;
+import java.time.LocalDateTime;
+
+import com.zone01oujda.moblogging.auth.dto.AuthTokensDto;
+import com.zone01oujda.moblogging.auth.repository.RefreshTokenRepository;
+import com.zone01oujda.moblogging.entity.RefreshToken;
 import com.zone01oujda.moblogging.auth.dto.LoginRequestDto;
 import com.zone01oujda.moblogging.auth.dto.RegisterRequestDto;
 import com.zone01oujda.moblogging.entity.User;
@@ -27,14 +31,17 @@ public class AuthService {
     private static final int MAX_PASSWORD_LENGTH = 32;
     
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, 
-                      AuthenticationManager authenticationManager, JwtTokenProvider tokenProvider) {
+    public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
+                      PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
+                      JwtTokenProvider tokenProvider) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.tokenProvider = tokenProvider;
         this.passwordEncoder = passwordEncoder;
     }
@@ -46,7 +53,7 @@ public class AuthService {
      * @throws BadRequestException if registration data is invalid
      * @throws ConflictException if user already exists
      */
-    public AuthResponseDto register(RegisterRequestDto dto) {
+    public AuthTokensDto register(RegisterRequestDto dto) {
         try {
             // Validation is handled by @Valid annotation in controller
             // Additional business logic validation
@@ -76,10 +83,7 @@ public class AuthService {
             user.setRole(Role.USER);
 
             User savedUser = userRepository.save(user);
-            String access = tokenProvider.generateAccesToken(savedUser);
-            String refresh = tokenProvider.generateRefreshToken(savedUser);
-
-            return new AuthResponseDto(access, refresh);
+            return issueTokens(savedUser);
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException("Email or username already exists");
         }
@@ -92,7 +96,7 @@ public class AuthService {
      * @throws BadRequestException if credentials are invalid
      * @throws ResourceNotFoundException if user not found
      */
-    public AuthResponseDto login(LoginRequestDto dto) {
+    public AuthTokensDto login(LoginRequestDto dto) {
         try {
             // Authenticate user with provided credentials
             Authentication authentication = authenticationManager.authenticate(
@@ -104,10 +108,7 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
             // Generate JWT token
-            String access = tokenProvider.generateAccesToken(user);
-            String refresh = tokenProvider.generateRefreshToken(user);
-
-            return new AuthResponseDto(access, refresh);
+            return issueTokens(user);
         } catch (org.springframework.security.core.AuthenticationException e) {
             throw new BadRequestException("Invalid username/email or password");
         }
@@ -120,5 +121,77 @@ public class AuthService {
      */
     public User findUserByUsername(String username) {
         return userRepository.findByUsernameOrEmail(username).orElse(null);
+    }
+
+    public AuthTokensDto refreshTokens(String refreshToken) {
+        if (!tokenProvider.validateToken(refreshToken)) {
+            throw new BadRequestException("Invalid refresh token");
+        }
+
+        String username = tokenProvider.getUsername(refreshToken);
+        User user = userRepository.findByUsernameOrEmail(username)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        RefreshToken stored = refreshTokenRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
+            .orElseThrow(() -> new BadRequestException("Refresh token not found"));
+
+        if (stored.getRevokedAt() != null) {
+            throw new BadRequestException("Refresh token revoked");
+        }
+
+        if (stored.getExpiresAt() != null && stored.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("Refresh token expired");
+        }
+
+        if (!passwordEncoder.matches(refreshToken, stored.getTokenHash())) {
+            throw new BadRequestException("Invalid refresh token");
+        }
+
+        return rotateTokens(user, stored);
+    }
+
+    public void revokeRefreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return;
+        }
+        if (!tokenProvider.validateToken(refreshToken)) {
+            return;
+        }
+        String username = tokenProvider.getUsername(refreshToken);
+        User user = userRepository.findByUsernameOrEmail(username).orElse(null);
+        if (user == null) {
+            return;
+        }
+        refreshTokenRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
+            .ifPresent(token -> {
+                token.setRevokedAt(LocalDateTime.now());
+                refreshTokenRepository.save(token);
+            });
+    }
+
+    private AuthTokensDto issueTokens(User user) {
+        String access = tokenProvider.generateAccesToken(user);
+        String refresh = tokenProvider.generateRefreshToken(user);
+        upsertRefreshToken(user, refresh);
+        return new AuthTokensDto(access, refresh);
+    }
+
+    private AuthTokensDto rotateTokens(User user, RefreshToken stored) {
+        String access = tokenProvider.generateAccesToken(user);
+        String refresh = tokenProvider.generateRefreshToken(user);
+        stored.setTokenHash(passwordEncoder.encode(refresh));
+        stored.setExpiresAt(LocalDateTime.now().plusSeconds(tokenProvider.getRefreshExpirationSeconds()));
+        stored.setRevokedAt(null);
+        refreshTokenRepository.save(stored);
+        return new AuthTokensDto(access, refresh);
+    }
+
+    private void upsertRefreshToken(User user, String refreshToken) {
+        RefreshToken token = refreshTokenRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
+            .orElseGet(() -> new RefreshToken(user));
+        token.setTokenHash(passwordEncoder.encode(refreshToken));
+        token.setExpiresAt(LocalDateTime.now().plusSeconds(tokenProvider.getRefreshExpirationSeconds()));
+        token.setRevokedAt(null);
+        refreshTokenRepository.save(token);
     }
 }

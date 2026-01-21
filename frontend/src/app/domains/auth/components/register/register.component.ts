@@ -130,10 +130,8 @@ export class RegisterComponent {
     this.auth.register(payload).subscribe({
       next: (res) => {
         const access = res?.data?.accessToken || res?.data?.token || res?.data;
-        const refresh = res?.data?.refreshToken;
         if (access) {
           this.auth.setToken(access);
-          if (refresh) this.auth.setRefreshToken(refresh);
           this.ws.connect(access, (data) => this.notificationService.onNotificationReceived(data));
         }
         this.router.navigateByUrl('/');

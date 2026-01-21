@@ -10,18 +10,15 @@ import { AuthService } from '@core/services/auth.service';
 export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
   const router = inject(Router);
   const auth = inject(AuthService);
+  const isAuthRequest = req.url.includes('/auth/login')
+    || req.url.includes('/auth/register')
+    || req.url.includes('/auth/refresh')
+    || req.url.includes('/auth/logout');
 
   return next(req).pipe(
     catchError((error: any) => {
-      if (error.status === 401) {
-        const refresh = auth.getRefreshToken();
-        if (!refresh) {
-          router.navigate(['/auth/login']);
-          return throwError(() => error);
-        }
-
-        // try refreshing token
-        return auth.refresh(refresh).pipe(
+      if (error.status === 401 && !isAuthRequest) {
+        return auth.refresh().pipe(
           switchMap((res: any) => {
             const access = res?.data?.accessToken || res?.data?.accessToken;
             if (access) {
@@ -34,6 +31,7 @@ export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
             return throwError(() => error);
           }),
           catchError((e) => {
+            auth.clearToken();
             router.navigate(['/auth/login']);
             return throwError(() => e);
           })

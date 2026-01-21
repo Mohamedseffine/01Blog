@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.zone01oujda.moblogging.entity.User;
+import com.zone01oujda.moblogging.user.enums.Role;
 
 public interface  UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.username = :usernameOrEmail OR u.email = :usernameOrEmail")
@@ -14,4 +15,6 @@ public interface  UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    long countByBannedTrue();
+    long countByRole(Role role);
 }

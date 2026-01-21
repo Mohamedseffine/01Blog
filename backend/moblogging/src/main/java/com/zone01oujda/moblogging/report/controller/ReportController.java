@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.zone01oujda.moblogging.report.service.ReportService;
 import com.zone01oujda.moblogging.util.response.ApiResponse;
 
 import jakarta.validation.Valid;
@@ -18,6 +19,12 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/reports")
 public class ReportController {
+
+    private final ReportService reportService;
+
+    public ReportController(ReportService reportService) {
+        this.reportService = reportService;
+    }
 
     @PostMapping
     public ResponseEntity<ApiResponse<Object>> createReport(@Valid @RequestBody Object reportDto) {
@@ -43,6 +50,7 @@ public class ReportController {
 
     @PutMapping("/{reportId}/resolve")
     public ResponseEntity<ApiResponse<Object>> resolveReport(@PathVariable("reportId") Long reportId) {
+        reportService.resolveReport(reportId);
         return ResponseEntity.ok(
             new ApiResponse<>(true, "Report resolved successfully", null)
         );

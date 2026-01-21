@@ -23,38 +23,36 @@ export interface RegisterPayload {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private base = `${environment.apiUrl}/auth`
+  private accessToken: string | null = null
 
   constructor(private http: HttpClient) {}
 
   login(payload: LoginPayload): Observable<any> {
-    return this.http.post(`${this.base}/login`, payload);
+    return this.http.post(`${this.base}/login`, payload, { withCredentials: true });
   }
 
   register(payload: RegisterPayload): Observable<any> {
-    return this.http.post(`${this.base}/register`, payload);
+    return this.http.post(`${this.base}/register`, payload, { withCredentials: true });
   }
 
-  refresh(refreshToken: string): Observable<any> {
-    return this.http.post(`${this.base}/refresh`, { refreshToken });
+  refresh(): Observable<any> {
+    return this.http.post(`${this.base}/refresh`, {}, { withCredentials: true });
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return this.accessToken;
   }
 
   setToken(token: string) {
-    localStorage.setItem('token', token);
+    this.accessToken = token;
   }
 
-  getRefreshToken(): string | null {
-    return localStorage.getItem('refreshToken');
-  }
-
-  setRefreshToken(refreshToken: string) {
-    localStorage.setItem('refreshToken', refreshToken);
+  clearToken() {
+    this.accessToken = null;
   }
 
   logout() {
-    localStorage.removeItem('token');
+    this.accessToken = null;
+    return this.http.post(`${this.base}/logout`, {}, { withCredentials: true });
   }
 }

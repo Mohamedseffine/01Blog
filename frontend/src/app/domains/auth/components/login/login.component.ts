@@ -113,10 +113,8 @@ export class LoginComponent {
         next: (res) => {
           // backend returns ApiResponse<AuthResponseDto>
           const access = res?.data?.accessToken || res?.data?.token || res?.data;
-          const refresh = res?.data?.refreshToken;
           if (access) {
             this.auth.setToken(access);
-            if (refresh) this.auth.setRefreshToken(refresh);
             // connect websocket after login
             this.ws.connect(access, (data) => this.notificationService.onNotificationReceived(data));
           }

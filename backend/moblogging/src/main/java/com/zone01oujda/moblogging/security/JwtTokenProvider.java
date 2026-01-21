@@ -76,4 +76,8 @@ public class JwtTokenProvider {
         return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getSubject();
     }
 
+    public long getRefreshExpirationSeconds() {
+        return jwtRefreshExpiration / 1000L;
+    }
+
 }
