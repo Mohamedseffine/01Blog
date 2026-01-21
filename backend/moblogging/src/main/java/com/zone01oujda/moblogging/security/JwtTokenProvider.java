@@ -39,15 +39,14 @@ public class JwtTokenProvider {
 
     public String generateAccesToken(User user) {
         Map<String,Object> claims = new HashMap<>();
-        claims.put("fnm",user.getFirstName()+user.getLastName());
-        claims.put("iat",new Date());
-        claims.put("iss","moblogging");
+        claims.put("fnm", user.getFirstName() + user.getLastName());
         claims.put("UserId", user.getId());
         claims.put("email", user.getEmail());
         claims.put("role", user.getRole());
         return Jwts.builder()
-        .setSubject(user.getUsername())
         .setClaims(claims)
+        .setSubject(user.getUsername())
+        .setIssuer("moblogging")
         .setIssuedAt(new Date())
         .setExpiration(new Date(System.currentTimeMillis() + jwtAccessExpiration))
         .signWith(secretKey, SignatureAlgorithm.HS256)

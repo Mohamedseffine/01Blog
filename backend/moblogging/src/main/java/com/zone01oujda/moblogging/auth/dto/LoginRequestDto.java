@@ -21,9 +21,9 @@ public class LoginRequestDto {
     public String usernameOrEmail;
 
     /**
-     * Password (min 8, max 15 characters)
+     * Password (min 8, max 72 characters)
      */
     @NotBlank(message = "Password is required")
-    @Size(min = 8, max = 15, message = "Password must be between 8 and 15 characters")
+    @Size(min = 8, max = 72, message = "Password must be between 8 and 72 characters")
     public String password;
 }

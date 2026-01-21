@@ -51,17 +51,17 @@ public class RegisterRequestDto {
     public String email;
 
     /**
-     * Password (required, 10-32 characters)
+     * Password (required, 10-72 characters)
      */
     @NotBlank(message = "Password is required")
-    @Size(min = 10, max = 32, message = "Password must be 10-32 characters")
+    @Size(min = 10, max = 72, message = "Password must be 10-72 characters")
     public String password;
 
     /**
      * Password confirmation (must match password)
      */
     @NotBlank(message = "Confirm password is required")
-    @Size(min = 10, max = 32, message = "Password must be 10-32 characters")
+    @Size(min = 10, max = 72, message = "Password must be 10-72 characters")
     public String confirmPassword;
 
     /**
@@ -82,4 +82,3 @@ public class RegisterRequestDto {
     @NotNull(message = "Profile type is required")
     public ProfileType profileType;
 }
-

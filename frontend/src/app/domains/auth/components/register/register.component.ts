@@ -65,12 +65,12 @@ import { NotificationService } from '@domains/notification/services/notification
 
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-control" name="password" [ngModel]="model().password" (ngModelChange)="updateModel({ password: $event })" minlength="10" maxlength="32" required />
+                    <label class="form-label"></label>
+                    <input type="password" class="form-control" name="password" [ngModel]="model().password" (ngModelChange)="updateModel({ password: $event })" minlength="10" maxlength="72" required />
                   </div>
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Confirm password</label>
-                    <input type="password" class="form-control" name="confirmPassword" [ngModel]="model().confirmPassword" (ngModelChange)="updateModel({ confirmPassword: $event })" minlength="10" maxlength="32" required />
+                    <input type="password" class="form-control" name="confirmPassword" [ngModel]="model().confirmPassword" (ngModelChange)="updateModel({ confirmPassword: $event })" minlength="10" maxlength="72" required />
                   </div>
                 </div>
 
@@ -117,15 +117,17 @@ export class RegisterComponent {
       this.error.set('Passwords do not match');
       return;
     }
-    // enforce backend password length constraint (10-32 chars)
-    if (!model.password || model.password.length < 10 || model.password.length > 32) {
-      this.error.set('Password must be between 10 and 32 characters');
+    // enforce backend password length constraint (10-72 chars)
+    if (!model.password || model.password.length < 10 || model.password.length > 72) {
+      this.error.set('Password must be between 10 and 72 characters');
       return;
     }
     this.loading.set(true);
     const payload = { ...model };
     // ensure birthDate is ISO string if set
     if (payload.birthDate) payload.birthDate = payload.birthDate;
+    console.log(payload.password);
+    console.log(payload.confirmPassword);
 
     this.auth.register(payload).subscribe({
       next: (res) => {

@@ -45,6 +45,7 @@ public class SecurityConfig {
                 "/auth/logout",
                 "/ws/**"
             ).permitAll()
+            .requestMatchers("/admin/**").hasRole("ADMIN")
             .anyRequest().authenticated()
         );
         // .oauth2Login(Customizer.withDefaults());

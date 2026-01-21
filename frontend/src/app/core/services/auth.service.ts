@@ -24,6 +24,7 @@ export interface RegisterPayload {
 export class AuthService {
   private base = `${environment.apiUrl}/auth`
   private accessToken: string | null = null
+  private readonly tokenKey = 'auth_token';
 
   constructor(private http: HttpClient) {}
 
@@ -40,19 +41,24 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return this.accessToken;
+    if (this.accessToken) return this.accessToken;
+    const stored = localStorage.getItem(this.tokenKey);
+    this.accessToken = stored;
+    return stored;
   }
 
   setToken(token: string) {
     this.accessToken = token;
+    localStorage.setItem(this.tokenKey, token);
   }
 
   clearToken() {
     this.accessToken = null;
+    localStorage.removeItem(this.tokenKey);
   }
 
   logout() {
-    this.accessToken = null;
+    this.clearToken();
     return this.http.post(`${this.base}/logout`, {}, { withCredentials: true });
   }
 }

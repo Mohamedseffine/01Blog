@@ -11,11 +11,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.zone01oujda.moblogging.admin.dto.AdminCommentDto;
 import com.zone01oujda.moblogging.admin.dto.AdminDashboardDto;
+import com.zone01oujda.moblogging.admin.dto.AdminPostDto;
 import com.zone01oujda.moblogging.admin.dto.AdminReportDto;
 import com.zone01oujda.moblogging.admin.dto.AdminUserDto;
 import com.zone01oujda.moblogging.admin.dto.BanRequestDto;
 import com.zone01oujda.moblogging.admin.service.AdminService;
+import com.zone01oujda.moblogging.post.enums.PostVisibility;
 import com.zone01oujda.moblogging.util.response.ApiResponse;
 
 import jakarta.validation.Valid;
@@ -43,6 +46,36 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(
             new ApiResponse<>(true, "Users retrieved successfully", adminService.getAllUsers(page, size))
+        );
+    }
+
+    @GetMapping("/posts")
+    public ResponseEntity<ApiResponse<Page<AdminPostDto>>> getAllPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sortDir,
+            @RequestParam(required = false) PostVisibility visibility,
+            @RequestParam(required = false) Boolean hidden,
+            @RequestParam(required = false) Long creatorId,
+            @RequestParam(required = false) String creatorUsername) {
+        return ResponseEntity.ok(
+            new ApiResponse<>(true, "Posts retrieved successfully",
+                adminService.getAllPosts(page, size, sortDir, visibility, hidden, creatorId, creatorUsername))
+        );
+    }
+
+    @GetMapping("/comments")
+    public ResponseEntity<ApiResponse<Page<AdminCommentDto>>> getAllComments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sortDir,
+            @RequestParam(required = false) Boolean hidden,
+            @RequestParam(required = false) Long postId,
+            @RequestParam(required = false) Long creatorId,
+            @RequestParam(required = false) String creatorUsername) {
+        return ResponseEntity.ok(
+            new ApiResponse<>(true, "Comments retrieved successfully",
+                adminService.getAllComments(page, size, sortDir, hidden, postId, creatorId, creatorUsername))
         );
     }
 

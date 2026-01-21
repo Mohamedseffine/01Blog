@@ -45,6 +45,9 @@ import { NotificationService } from '@domains/notification/services/notification
                     [ngModel]="password()"
                     (ngModelChange)="password.set($event)"
                     name="password"
+                    required
+                    minlength="8"
+                    maxlength="72"
                   >
                 </div>
 

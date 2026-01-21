@@ -1,10 +1,25 @@
 package com.zone01oujda.moblogging.comment.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.zone01oujda.moblogging.entity.Comment;
 
-
 public interface CommentRepository extends JpaRepository<Comment, Long> {
-    
+    @Query("""
+        SELECT c FROM Comment c
+        WHERE (:hidden IS NULL OR c.hidden = :hidden)
+          AND (:postId IS NULL OR c.post.id = :postId)
+          AND (:creatorId IS NULL OR c.creator.id = :creatorId)
+          AND (:creatorUsername IS NULL OR lower(c.creator.username) LIKE lower(concat('%', :creatorUsername, '%')))
+        """)
+    Page<Comment> findForAdmin(
+            @Param("hidden") Boolean hidden,
+            @Param("postId") Long postId,
+            @Param("creatorId") Long creatorId,
+            @Param("creatorUsername") String creatorUsername,
+            Pageable pageable);
 }

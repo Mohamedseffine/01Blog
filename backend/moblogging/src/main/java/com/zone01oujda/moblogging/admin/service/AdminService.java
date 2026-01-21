@@ -6,20 +6,25 @@ import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.zone01oujda.moblogging.admin.dto.AdminCommentDto;
 import com.zone01oujda.moblogging.admin.dto.AdminDashboardDto;
+import com.zone01oujda.moblogging.admin.dto.AdminPostDto;
 import com.zone01oujda.moblogging.admin.dto.AdminReportDto;
 import com.zone01oujda.moblogging.admin.dto.AdminUserDto;
 import com.zone01oujda.moblogging.admin.dto.BanRequestDto;
 import com.zone01oujda.moblogging.admin.repository.BanRepository;
 import com.zone01oujda.moblogging.comment.repository.CommentRepository;
 import com.zone01oujda.moblogging.entity.Ban;
+import com.zone01oujda.moblogging.entity.Comment;
 import com.zone01oujda.moblogging.entity.Post;
 import com.zone01oujda.moblogging.entity.Report;
 import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.exception.AccessDeniedException;
 import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
+import com.zone01oujda.moblogging.post.enums.PostVisibility;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
 import com.zone01oujda.moblogging.report.enums.ReportStatus;
 import com.zone01oujda.moblogging.report.repository.ReportRepository;
@@ -83,6 +88,33 @@ public class AdminService {
             ));
     }
     
+    /**
+     * Get paginated list of posts
+     * @param page page number
+     * @param size page size
+     * @return page of admin post DTOs
+     */
+    public Page<AdminPostDto> getAllPosts(int page, int size, String sortDir,
+            PostVisibility visibility,
+            Boolean hidden, Long creatorId, String creatorUsername) {
+        Sort sort = Sort.by(parseSortDir(sortDir), "createdAt");
+        return postRepository.findForAdmin(visibility, hidden, creatorId, creatorUsername, PageRequest.of(page, size, sort))
+            .map(this::toAdminPostDto);
+    }
+
+    /**
+     * Get paginated list of comments
+     * @param page page number
+     * @param size page size
+     * @return page of admin comment DTOs
+     */
+    public Page<AdminCommentDto> getAllComments(int page, int size, String sortDir,
+            Boolean hidden, Long postId, Long creatorId, String creatorUsername) {
+        Sort sort = Sort.by(parseSortDir(sortDir), "createdAt");
+        return commentRepository.findForAdmin(hidden, postId, creatorId, creatorUsername, PageRequest.of(page, size, sort))
+            .map(this::toAdminCommentDto);
+    }
+
 
     /**
      * Ban a user by ID
@@ -198,5 +230,54 @@ public class AdminService {
             report.getReporter() != null ? report.getReporter().getUsername() : null,
             reportedUsername
         );
+    }
+
+    private AdminPostDto toAdminPostDto(Post post) {
+        Long creatorId = null;
+        String creatorUsername = null;
+        if (post.getCreator() != null) {
+            creatorId = post.getCreator().getId();
+            creatorUsername = post.getCreator().getUsername();
+        }
+        return new AdminPostDto(
+            post.getId(),
+            post.getTitle(),
+            post.getVisibility(),
+            post.getCreatedAt(),
+            post.getHidden(),
+            creatorId,
+            creatorUsername
+        );
+    }
+
+    private AdminCommentDto toAdminCommentDto(Comment comment) {
+        Long creatorId = null;
+        String creatorUsername = null;
+        if (comment.getCreator() != null) {
+            creatorId = comment.getCreator().getId();
+            creatorUsername = comment.getCreator().getUsername();
+        }
+        Long postId = comment.getPost() != null ? comment.getPost().getId() : null;
+        return new AdminCommentDto(
+            comment.getId(),
+            comment.getContent(),
+            postId,
+            creatorId,
+            creatorUsername,
+            comment.getCreatedAt(),
+            comment.getModifiedAt(),
+            comment.getHidden()
+        );
+    }
+
+    private Sort.Direction parseSortDir(String sortDir) {
+        if (sortDir == null || sortDir.isBlank()) {
+            return Sort.Direction.DESC;
+        }
+        try {
+            return Sort.Direction.fromString(sortDir);
+        } catch (IllegalArgumentException ex) {
+            return Sort.Direction.DESC;
+        }
     }
 }

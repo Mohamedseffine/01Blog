@@ -79,6 +79,12 @@ import { AdminDashboard } from '../../models/admin.model';
             <a class="btn btn-primary" routerLink="/admin/users">
               <i class="bi bi-people"></i> Manage Users
             </a>
+            <a class="btn btn-outline-primary" routerLink="/admin/posts">
+              <i class="bi bi-journals"></i> Manage Posts
+            </a>
+            <a class="btn btn-outline-primary" routerLink="/admin/comments">
+              <i class="bi bi-chat-left-text"></i> Manage Comments
+            </a>
             <a class="btn btn-outline-primary" routerLink="/admin/reports">
               <i class="bi bi-flag"></i> Review Reports
             </a>

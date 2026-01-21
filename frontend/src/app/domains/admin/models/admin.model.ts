@@ -46,6 +46,27 @@ export interface AdminReport {
   reportedUsername: string | null;
 }
 
+export interface AdminPost {
+  id: number;
+  title: string;
+  visibility: string;
+  createdAt: string;
+  hidden: boolean;
+  creatorId: number | null;
+  creatorUsername: string | null;
+}
+
+export interface AdminComment {
+  id: number;
+  content: string;
+  postId: number | null;
+  creatorId: number | null;
+  creatorUsername: string | null;
+  createdAt: string;
+  modifiedAt: string;
+  hidden: boolean;
+}
+
 export interface BanRequest {
   reason: string;
   isPermanent: boolean;
