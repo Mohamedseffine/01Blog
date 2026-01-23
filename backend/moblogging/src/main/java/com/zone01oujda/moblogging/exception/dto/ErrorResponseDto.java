@@ -44,7 +44,7 @@ public class ErrorResponseDto {
      * @param message error message
      * @param errors validation errors map
      */
-    public ErrorResponseDto(boolean success, String message, Map<String, String> errors) {
+    public ErrorResponseDto(boolean success, String message) {
         this.success = success;
         this.message = message;
         this.errors = errors;

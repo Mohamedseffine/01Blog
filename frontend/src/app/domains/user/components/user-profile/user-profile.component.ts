@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { UserService } from '../../services/user.service';
+import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -43,7 +44,13 @@ import { UserService } from '../../services/user.service';
               </div>
 
               <div class="mt-4">
-                <a class="btn btn-outline-primary" routerLink="/users/edit-profile">Edit profile</a>
+                <a
+                  class="btn btn-outline-primary"
+                  routerLink="/users/edit-profile"
+                  *ngIf="canEditProfile(user.id)"
+                >
+                  Edit profile
+                </a>
               </div>
             </div>
           </div>
@@ -87,8 +94,18 @@ export class UserProfileComponent {
     })
   );
 
-  constructor(private route: ActivatedRoute, private userService: UserService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private userService: UserService,
+    private authService: AuthService
+  ) {}
 
   private fallbackAvatar =
     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><rect width='100%' height='100%' fill='%23dee2e6'/><text x='50%' y='54%' font-size='48' text-anchor='middle' fill='%236c757d' font-family='Arial'>?</text></svg>";
+
+  canEditProfile(userId: number) {
+    const current = this.authService.getCurrentUserSnapshot();
+    if (!current) return false;
+    return current.id === userId;
+  }
 }

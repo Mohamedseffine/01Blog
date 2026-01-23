@@ -124,8 +124,20 @@ public class AdminService {
     public Page<AdminCommentDto> getAllComments(int page, int size, String sortDir,
             Boolean hidden, Long postId, Long creatorId, String creatorUsername) {
         Sort sort = Sort.by(parseSortDir(sortDir), "createdAt");
-        return commentRepository.findForAdmin(hidden, postId, creatorId, creatorUsername, PageRequest.of(page, size, sort))
+        Page<AdminCommentDto> base = commentRepository
+            .findForAdmin(hidden, postId, creatorId, PageRequest.of(page, size, sort))
             .map(this::toAdminCommentDto);
+
+        if (creatorUsername == null || creatorUsername.isBlank()) {
+            return base;
+        }
+
+        String needle = creatorUsername.toLowerCase();
+        java.util.List<AdminCommentDto> filtered = base.getContent().stream()
+            .filter(dto -> dto.getCreatorUsername() != null
+                && dto.getCreatorUsername().toLowerCase().contains(needle))
+            .toList();
+        return new org.springframework.data.domain.PageImpl<>(filtered, base.getPageable(), filtered.size());
     }
 
 
@@ -188,6 +200,26 @@ public class AdminService {
             .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
         post.setHidden(false);
         postRepository.save(post);
+    }
+
+    public void hideComment(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        comment.setHidden(true);
+        commentRepository.save(comment);
+    }
+
+    public void unhideComment(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        comment.setHidden(false);
+        commentRepository.save(comment);
+    }
+
+    public void deleteComment(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        commentRepository.delete(comment);
     }
 
     /**

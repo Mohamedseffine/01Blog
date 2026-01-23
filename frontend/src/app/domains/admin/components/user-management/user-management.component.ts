@@ -116,7 +116,7 @@ export class UserManagementComponent implements OnInit {
   banReason: Record<number, string> = {};
   banDuration: Record<number, string> = {};
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService) { }
 
   ngOnInit(): void {
     this.refresh();
@@ -147,29 +147,34 @@ export class UserManagementComponent implements OnInit {
   ban(user: AdminUser) {
     const reason = (this.banReason[user.id] || '').trim();
     if (!reason) return;
+
     const durationValue = this.banDuration[user.id];
     const durationDays = durationValue ? Number(durationValue) : undefined;
     const isPermanent = !durationDays;
+
     this.adminService.banUser(user.id, { reason, isPermanent, durationDays }).subscribe({
       next: () => {
-        user.banned = true;
+        this.users.update(list =>
+          list.map(u => u.id === user.id ? { ...u, banned: true } : u)
+        );
+
         this.banReason[user.id] = '';
         this.banDuration[user.id] = '';
       },
-      error: () => {
-        this.error.set(`Failed to ban ${user.username}.`);
-      }
+      error: () => this.error.set(`Failed to ban ${user.username}.`)
     });
   }
+
 
   unban(user: AdminUser) {
     this.adminService.unbanUser(user.id).subscribe({
       next: () => {
-        user.banned = false;
+        this.users.update(list =>
+          list.map(u => u.id === user.id ? { ...u, banned: false } : u)
+        );
       },
-      error: () => {
-        this.error.set(`Failed to unban ${user.username}.`);
-      }
+      error: () => this.error.set(`Failed to unban ${user.username}.`)
     });
   }
+
 }

@@ -82,6 +82,18 @@ export class AdminService {
     return this.http.delete<ApiResponse<void>>(`${this.base}/posts/${postId}`);
   }
 
+  hideComment(commentId: number): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.base}/comments/${commentId}/hide`, {});
+  }
+
+  unhideComment(commentId: number): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.base}/comments/${commentId}/unhide`, {});
+  }
+
+  deleteComment(commentId: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(`${this.base}/comments/${commentId}`);
+  }
+
   hidePost(postId: number): Observable<ApiResponse<void>> {
     return this.http.post<ApiResponse<void>>(`${this.base}/posts/${postId}/hide`, {});
   }

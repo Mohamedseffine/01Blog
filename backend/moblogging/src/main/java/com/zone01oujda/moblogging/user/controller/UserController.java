@@ -74,6 +74,15 @@ public class UserController {
         );
     }
 
+    @PutMapping(value = "/current", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserDto>> updateCurrentUser(
+            @Valid @ModelAttribute UpdateUserDto updateUserDto) {
+        UserDto updated = userService.updateCurrentUser(updateUserDto);
+        return ResponseEntity.ok(
+            new ApiResponse<>(true, "User updated successfully", updated)
+        );
+    }
+
     @PutMapping(value = "/{userId}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Object>> updateUser(
             @PathVariable("userId") Long userId,

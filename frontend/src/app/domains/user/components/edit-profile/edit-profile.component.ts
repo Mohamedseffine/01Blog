@@ -113,7 +113,7 @@ export class EditProfileComponent {
       return;
     }
     this.loading.set(true);
-    this.userService.updateProfile(id, {
+    this.userService.updateProfile({
       username: this.username().trim(),
       bio: this.bio(),
       profilePicture: this.profilePicture() || undefined

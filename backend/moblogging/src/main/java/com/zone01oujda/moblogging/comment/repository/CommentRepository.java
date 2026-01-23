@@ -16,12 +16,10 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
         WHERE (:hidden IS NULL OR c.hidden = :hidden)
           AND (:postId IS NULL OR c.post.id = :postId)
           AND (:creatorId IS NULL OR c.creator.id = :creatorId)
-          AND (:creatorUsername IS NULL OR lower(c.creator.username) LIKE lower(concat('%', :creatorUsername, '%')))
         """)
     Page<Comment> findForAdmin(
             @Param("hidden") Boolean hidden,
             @Param("postId") Long postId,
             @Param("creatorId") Long creatorId,
-            @Param("creatorUsername") String creatorUsername,
             Pageable pageable);
 }

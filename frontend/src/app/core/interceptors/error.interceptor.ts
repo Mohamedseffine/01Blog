@@ -21,7 +21,7 @@ export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
       if (error.status === 401 && !isAuthRequest) {
         return auth.refresh().pipe(
           switchMap((res: any) => {
-            const access = res?.data?.accessToken || res?.data?.accessToken;
+            const access = res?.data?.accessToken ;
             if (access) {
               auth.setToken(access);
               // retry original request with new token

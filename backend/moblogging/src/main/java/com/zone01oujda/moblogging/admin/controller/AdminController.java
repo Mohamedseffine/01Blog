@@ -117,6 +117,24 @@ public class AdminController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Post unhidden successfully"));
     }
 
+    @PostMapping("/comments/{commentId}/hide")
+    public ResponseEntity<ApiResponse<Void>> hideComment(@PathVariable("commentId") Long commentId) {
+        adminService.hideComment(commentId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Comment hidden successfully"));
+    }
+
+    @PostMapping("/comments/{commentId}/unhide")
+    public ResponseEntity<ApiResponse<Void>> unhideComment(@PathVariable("commentId") Long commentId) {
+        adminService.unhideComment(commentId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Comment unhidden successfully"));
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable("commentId") Long commentId) {
+        adminService.deleteComment(commentId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Comment deleted successfully"));
+    }
+
     @GetMapping("/reports")
     public ResponseEntity<ApiResponse<Page<AdminReportDto>>> getReports(
             @RequestParam(defaultValue = "0") int page,

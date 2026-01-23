@@ -1,5 +1,12 @@
 package com.zone01oujda.moblogging.user.service;
 
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,13 +19,6 @@ import com.zone01oujda.moblogging.user.dto.UserDto;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
 import com.zone01oujda.moblogging.util.FileUploadUtil;
 import com.zone01oujda.moblogging.util.SecurityUtil;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.net.MalformedURLException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 
 @Service
 public class UserService {
@@ -75,6 +75,11 @@ public class UserService {
 
         User saved = userRepository.save(user);
         return toDto(saved);
+    }
+
+    public UserDto updateCurrentUser(UpdateUserDto dto) {
+        User currentUser = getCurrentUserEntity();
+        return updateUser(currentUser.getId(), dto);
     }
 
     public Resource getProfilePicture(Long userId) {

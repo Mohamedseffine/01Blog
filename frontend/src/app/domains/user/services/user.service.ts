@@ -25,12 +25,12 @@ export class UserService {
     );
   }
 
-  updateProfile(id: number, dto: UpdateProfileDto): Observable<User> {
+  updateProfile(dto: UpdateProfileDto): Observable<User> {
     const formData = new FormData();
     if (dto.username) formData.append('username', dto.username);
     if (dto.bio) formData.append('bio', dto.bio);
     if (dto.profilePicture) formData.append('profilePicture', dto.profilePicture);
-    return this.http.put<any>(`${this.apiUrl}/${id}`, formData).pipe(
+    return this.http.put<any>(`${this.apiUrl}/current`, formData).pipe(
       map((res) => res?.data ?? res)
     );
   }

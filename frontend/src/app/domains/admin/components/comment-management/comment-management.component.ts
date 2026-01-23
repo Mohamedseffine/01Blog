@@ -86,6 +86,12 @@ import { AdminComment, Page } from '../../models/admin.model';
                 </span>
               </td>
               <td class="text-end">
+                <button
+                  class="btn btn-sm btn-outline-warning me-2"
+                  (click)="toggleHidden(comment)"
+                >
+                  {{ comment.hidden ? 'Unhide' : 'Hide' }}
+                </button>
                 <a
                   *ngIf="comment.postId"
                   class="btn btn-sm btn-outline-primary"
@@ -93,6 +99,9 @@ import { AdminComment, Page } from '../../models/admin.model';
                 >
                   View Post
                 </a>
+                <button class="btn btn-sm btn-outline-danger ms-2" (click)="deleteComment(comment)">
+                  Delete
+                </button>
               </td>
             </tr>
           </tbody>
@@ -168,5 +177,37 @@ export class CommentManagementComponent implements OnInit {
   changePage(page: number) {
     if (page < 0) return;
     this.refresh(page);
+  }
+
+  toggleHidden(comment: AdminComment) {
+  const newHidden = !comment.hidden;
+
+  const request = newHidden
+    ? this.adminService.hideComment(comment.id)
+    : this.adminService.unhideComment(comment.id);
+
+  request.subscribe({
+    next: () => {
+      this.comments.update(list =>
+        list.map(c => c.id === comment.id ? { ...c, hidden: newHidden } : c)
+      );
+    },
+    error: () => {
+      this.error.set(`Failed to ${comment.hidden ? 'unhide' : 'hide'} comment #${comment.id}.`);
+    }
+  });
+}
+
+
+  deleteComment(comment: AdminComment) {
+    if (!confirm('Delete this comment?')) return;
+    this.adminService.deleteComment(comment.id).subscribe({
+      next: () => {
+        this.comments.set(this.comments().filter(item => item.id !== comment.id));
+      },
+      error: () => {
+        this.error.set(`Failed to delete comment #${comment.id}.`);
+      }
+    });
   }
 }

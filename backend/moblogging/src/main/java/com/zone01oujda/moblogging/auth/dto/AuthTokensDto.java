@@ -9,5 +9,4 @@ import lombok.Data;
 public class AuthTokensDto {
     private String accessToken;
     private String refreshToken;
-    // private Role role;
 }
