@@ -271,6 +271,12 @@ public class AdminService {
             if (report.getPost().getCreator() != null) {
                 reportedUsername = report.getPost().getCreator().getUsername();
             }
+        } else if (report.getComment() != null) {
+            contentType = "COMMENT";
+            contentId = report.getComment().getId();
+            if (report.getComment().getCreator() != null) {
+                reportedUsername = report.getComment().getCreator().getUsername();
+            }
         } else if (report.getReportedUser() != null) {
             contentType = "USER";
             contentId = report.getReportedUser().getId();

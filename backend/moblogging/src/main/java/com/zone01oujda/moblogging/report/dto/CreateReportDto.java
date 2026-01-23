@@ -7,8 +7,11 @@ import lombok.Data;
 
 @Data
 public class CreateReportDto {
-    @NotNull(message = "Post ID is required")
     private Long postId;
+
+    private Long commentId;
+
+    private Long reportedUserId;
 
     @NotNull(message = "Report reason is required")
     private ReportReason reason;

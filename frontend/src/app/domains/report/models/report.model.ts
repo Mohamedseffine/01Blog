@@ -9,7 +9,9 @@ export type ReportReason =
   | 'OTHER';
 
 export interface CreateReportDto {
-  postId: number;
+  postId?: number;
+  commentId?: number;
+  reportedUserId?: number;
   reason: ReportReason;
   description?: string;
 }

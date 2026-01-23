@@ -3,9 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, map, of, switchMap, forkJoin } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { CommentService } from '@domains/comment/services/comment.service';
 import { ReportService } from '@domains/report/services/report.service';
 import { ReportReason } from '@domains/report/models/report.model';
+import { ReactService } from '@domains/react/services/react.service';
+import { ReactSummary, ReactType } from '@domains/react/models/react.model';
 import { AuthService } from '@core/services/auth.service';
 import { Comment } from '@domains/comment/models/comment.model';
 import { PostService } from '../../services/post.service';
@@ -29,6 +32,27 @@ import { PostService } from '../../services/post.service';
             </div>
           </div>
           <div class="text-muted mb-3">by {{ post.creatorUsername }}</div>
+
+          <div class="d-flex gap-2 mb-3" *ngIf="postReacts() as reacts">
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="reacts.userReact === 'LIKE'"
+              [class.btn-outline-primary]="reacts.userReact !== 'LIKE'"
+              type="button"
+              (click)="togglePostReact(post.id, 'LIKE')"
+            >
+              👍 {{ reacts.likeCount }}
+            </button>
+            <button
+              class="btn btn-sm"
+              [class.btn-danger]="reacts.userReact === 'DISLIKE'"
+              [class.btn-outline-danger]="reacts.userReact !== 'DISLIKE'"
+              type="button"
+              (click)="togglePostReact(post.id, 'DISLIKE')"
+            >
+              👎 {{ reacts.dislikeCount }}
+            </button>
+          </div>
 
           <div class="mb-4" *ngIf="canReportPost()">
             <button class="btn btn-sm btn-outline-danger" type="button" (click)="toggleReport()">
@@ -95,9 +119,57 @@ import { PostService } from '../../services/post.service';
               <div class="list-group-item" *ngFor="let c of comments()">
                 <div class="small text-muted">{{ c.createdAt | date:'short' }}</div>
                 <div>{{ c.content }}</div>
+                <div class="d-flex gap-2 mt-2" *ngIf="commentReacts(c.id) as cReact">
+                  <button
+                    class="btn btn-sm"
+                    [class.btn-primary]="cReact.userReact === 'LIKE'"
+                    [class.btn-outline-primary]="cReact.userReact !== 'LIKE'"
+                    type="button"
+                    (click)="toggleCommentReact(c.id, 'LIKE')"
+                  >
+                    👍 {{ cReact.likeCount }}
+                  </button>
+                  <button
+                    class="btn btn-sm"
+                    [class.btn-danger]="cReact.userReact === 'DISLIKE'"
+                    [class.btn-outline-danger]="cReact.userReact !== 'DISLIKE'"
+                    type="button"
+                    (click)="toggleCommentReact(c.id, 'DISLIKE')"
+                  >
+                    👎 {{ cReact.dislikeCount }}
+                  </button>
+                </div>
                 <div class="mt-2 d-flex gap-2" *ngIf="canManageComment(c)">
                   <button class="btn btn-sm btn-outline-primary" (click)="startEditComment(c)">Edit</button>
                   <button class="btn btn-sm btn-outline-danger" (click)="deleteComment(c)">Delete</button>
+                </div>
+                <div class="mt-2" *ngIf="canReportComment(c)">
+                  <button class="btn btn-sm btn-outline-danger" type="button" (click)="toggleCommentReport(c.id)">
+                    {{ reportingCommentId() === c.id ? 'Cancel Report' : 'Report Comment' }}
+                  </button>
+                  <div class="card mt-2" *ngIf="reportingCommentId() === c.id">
+                    <div class="card-body">
+                      <form (submit)="submitCommentReport($event, c.id)">
+                        <div class="mb-2">
+                          <label class="form-label">Reason</label>
+                          <select class="form-select" [ngModel]="reportReason()" (ngModelChange)="reportReason.set($event)" name="commentReason" required>
+                            <option *ngFor="let reason of reportReasons" [ngValue]="reason">
+                              {{ reason }}
+                            </option>
+                          </select>
+                        </div>
+                        <div class="mb-2">
+                          <label class="form-label">Details (optional)</label>
+                          <textarea class="form-control" rows="2" [ngModel]="reportDescription()" (ngModelChange)="reportDescription.set($event)" name="commentDescription"></textarea>
+                        </div>
+                        <div *ngIf="reportError()" class="alert alert-danger">{{ reportError() }}</div>
+                        <div *ngIf="reportSuccess()" class="alert alert-success">{{ reportSuccess() }}</div>
+                        <button class="btn btn-sm btn-danger" [disabled]="reportLoading()">
+                          {{ reportLoading() ? 'Submitting...' : 'Submit Report' }}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
                 </div>
                 <div class="mt-2" *ngIf="editingCommentId() === c.id">
                   <textarea
@@ -160,6 +232,9 @@ export class PostDetailComponent {
   reportError = signal('');
   reportSuccess = signal('');
   reportLoading = signal(false);
+  reportingCommentId = signal<number | null>(null);
+  postReacts = signal<ReactSummary | null>(null);
+  commentReactMap = signal<Record<number, ReactSummary>>({});
   reportReasons: ReportReason[] = [
     'SPAM',
     'HARASSMENT',
@@ -174,13 +249,17 @@ export class PostDetailComponent {
   post$ = this.route.paramMap.pipe(
     map((params) => Number(params.get('id'))),
     switchMap((id) => {
-      if (!id || Number.isNaN(id)) {
-        this.error.set('Invalid post id.');
+      if (!id || Number.isNaN(id) || id < 0) {
+        this.router.navigateByUrl('/not-found');
         return of(null);
       }
       return this.postService.getPostById(id).pipe(
-        catchError(() => {
-          this.error.set('Unable to load post.');
+        catchError((err: HttpErrorResponse) => {
+          if (err.status === 404) {
+            this.router.navigateByUrl('/not-found');
+          } else {
+            this.error.set('Unable to load post.');
+          }
           return of(null);
         })
       );
@@ -206,11 +285,13 @@ export class PostDetailComponent {
     private commentService: CommentService,
     private authService: AuthService,
     private router: Router,
-    private reportService: ReportService
+    private reportService: ReportService,
+    private reactService: ReactService
   ) {
     this.post$.subscribe((post) => {
       if (post?.id) {
         this.loadComments(post.id);
+        this.loadPostReacts(post.id);
       }
     });
   }
@@ -221,6 +302,7 @@ export class PostDetailComponent {
     this.commentService.getCommentsByPost(postId).subscribe({
       next: (res) => {
         this.comments.set(res?.content ?? []);
+        this.loadCommentReacts();
         this.commentsLoading.set(false);
       },
       error: () => {
@@ -240,6 +322,7 @@ export class PostDetailComponent {
         this.commentText.set('');
         this.commentLoading.set(false);
         this.comments.set([comment, ...this.comments()]);
+        this.loadCommentReact(comment.id);
       },
       error: () => {
         this.commentLoading.set(false);
@@ -266,6 +349,12 @@ export class PostDetailComponent {
     const user = this.authService.getCurrentUserSnapshot();
     if (!user) return false;
     return !(user.roles?.includes('ADMIN') || user.roles?.includes('ROLE_ADMIN'));
+  }
+
+  canReportComment(comment: Comment) {
+    const user = this.authService.getCurrentUserSnapshot();
+    if (!user || !this.canReportPost()) return false;
+    return user.username !== comment.creatorUsername;
   }
 
   deletePost(postId: number) {
@@ -338,6 +427,91 @@ export class PostDetailComponent {
       error: () => {
         this.reportLoading.set(false);
         this.reportError.set('Unable to submit report.');
+      }
+    });
+  }
+
+  toggleCommentReport(commentId: number) {
+    this.reportError.set('');
+    this.reportSuccess.set('');
+    this.reportingCommentId.set(this.reportingCommentId() === commentId ? null : commentId);
+  }
+
+  submitCommentReport(event: Event, commentId: number) {
+    event.preventDefault();
+    this.reportError.set('');
+    this.reportSuccess.set('');
+    this.reportLoading.set(true);
+    this.reportService.createReport({
+      commentId,
+      reason: this.reportReason(),
+      description: this.reportDescription().trim() || undefined
+    }).subscribe({
+      next: () => {
+        this.reportLoading.set(false);
+        this.reportSuccess.set('Report submitted.');
+        this.reportingCommentId.set(null);
+        this.reportDescription.set('');
+      },
+      error: () => {
+        this.reportLoading.set(false);
+        this.reportError.set('Unable to submit report.');
+      }
+    });
+  }
+
+  loadPostReacts(postId: number) {
+    this.reactService.getPostSummary(postId).subscribe({
+      next: (summary) => this.postReacts.set(summary),
+      error: () => this.postReacts.set({ likeCount: 0, dislikeCount: 0, userReact: null })
+    });
+  }
+
+  togglePostReact(postId: number, type: ReactType) {
+    const current = this.postReacts();
+    if (current?.userReact === type) {
+      this.reactService.removePostReact(postId).subscribe({
+        next: (summary) => this.postReacts.set(summary)
+      });
+      return;
+    }
+    this.reactService.reactToPost(postId, type).subscribe({
+      next: (summary) => this.postReacts.set(summary)
+    });
+  }
+
+  loadCommentReacts() {
+    this.comments().forEach((c) => this.loadCommentReact(c.id));
+  }
+
+  loadCommentReact(commentId: number) {
+    this.reactService.getCommentSummary(commentId).subscribe({
+      next: (summary) => {
+        const current = this.commentReactMap();
+        this.commentReactMap.set({ ...current, [commentId]: summary });
+      }
+    });
+  }
+
+  commentReacts(commentId: number) {
+    return this.commentReactMap()[commentId];
+  }
+
+  toggleCommentReact(commentId: number, type: ReactType) {
+    const current = this.commentReactMap()[commentId];
+    if (current?.userReact === type) {
+      this.reactService.removeCommentReact(commentId).subscribe({
+        next: (summary) => {
+          const map = this.commentReactMap();
+          this.commentReactMap.set({ ...map, [commentId]: summary });
+        }
+      });
+      return;
+    }
+    this.reactService.reactToComment(commentId, type).subscribe({
+      next: (summary) => {
+        const map = this.commentReactMap();
+        this.commentReactMap.set({ ...map, [commentId]: summary });
       }
     });
   }

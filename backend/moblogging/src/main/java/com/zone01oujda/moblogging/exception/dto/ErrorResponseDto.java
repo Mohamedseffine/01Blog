@@ -39,12 +39,21 @@ public class ErrorResponseDto {
     private Map<String, String> errors;
     
     /**
-     * Constructor for creating error response
+     * Constructor for creating error response without field errors
+     * @param success success flag
+     * @param message error message
+     */
+    public ErrorResponseDto(boolean success, String message) {
+        this(success, message, null);
+    }
+
+    /**
+     * Constructor for creating error response with field errors
      * @param success success flag
      * @param message error message
      * @param errors validation errors map
      */
-    public ErrorResponseDto(boolean success, String message) {
+    public ErrorResponseDto(boolean success, String message, Map<String, String> errors) {
         this.success = success;
         this.message = message;
         this.errors = errors;

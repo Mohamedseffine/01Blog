@@ -8,6 +8,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,6 +19,8 @@ import org.springframework.web.multipart.MultipartException;
 import com.zone01oujda.moblogging.exception.dto.ErrorResponseDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -31,7 +35,7 @@ public class GlobalExceptionHandler {
                 ex.getBindingResult().getFieldErrors()
                                 .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
-                return ResponseEntity.badRequest().body(new ErrorResponseDto(false, "Validation failed"));
+                return ResponseEntity.badRequest().body(new ErrorResponseDto(false, "Validation failed", errors));
         }
 
         @ExceptionHandler(org.springframework.web.multipart.MultipartException.class)
@@ -76,13 +80,46 @@ public class GlobalExceptionHandler {
                 return ResponseEntity.badRequest().body(new ErrorResponseDto(false, ex.getMessage()));
         }
 
+        @ExceptionHandler(ConstraintViolationException.class)
+        public ResponseEntity<ErrorResponseDto> handleConstraintViolation(ConstraintViolationException ex) {
+                Map<String, String> errors = new HashMap<>();
+
+                ex.getConstraintViolations().forEach(violation -> {
+                        String path = String.valueOf(violation.getPropertyPath());
+                        errors.put(path, violation.getMessage());
+                });
+
+                return ResponseEntity.badRequest().body(new ErrorResponseDto(false, "Validation failed", errors));
+        }
+
+        @ExceptionHandler(HttpMessageNotReadableException.class)
+        public ResponseEntity<ErrorResponseDto> handleUnreadableMessage(HttpMessageNotReadableException ex) {
+                return ResponseEntity.badRequest()
+                                .body(new ErrorResponseDto(false, "Malformed JSON request"));
+        }
+
+        @ExceptionHandler(AuthenticationException.class)
+        public ResponseEntity<ErrorResponseDto> handleAuthentication(AuthenticationException ex) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .body(new ErrorResponseDto(false, "Authentication required"));
+        }
+
+        @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+        public ResponseEntity<ErrorResponseDto> handleSecurityAccessDenied(
+                        org.springframework.security.access.AccessDeniedException ex) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .body(new ErrorResponseDto(false, "Access is denied"));
+        }
+
         @ExceptionHandler(DataIntegrityViolationException.class)
         public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolation(
                         DataIntegrityViolationException ex) {
 
                 String message = "Database constraint violation";
 
-                if (ex.getMostSpecificCause().getMessage().contains("email")) {
+                if (ex.getMostSpecificCause() != null
+                                && ex.getMostSpecificCause().getMessage() != null
+                                && ex.getMostSpecificCause().getMessage().contains("email")) {
                         message = "Email already exists";
                 }
 
@@ -109,6 +146,7 @@ public class GlobalExceptionHandler {
 
         @ExceptionHandler(Exception.class)
         public ResponseEntity<ErrorResponseDto> handleGenericException(Exception ex) {
+                logger.error("Unhandled exception", ex);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body(new ErrorResponseDto(false, "An unexpected error occurred"));
         }

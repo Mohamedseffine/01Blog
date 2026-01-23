@@ -31,6 +31,10 @@ public class Report {
     @ManyToOne
     @JoinColumn(name = "post_id")
     private Post post;
+
+    @ManyToOne
+    @JoinColumn(name = "comment_id")
+    private Comment comment;
     
     @ManyToOne
     @JoinColumn(name = "reported_user_id")
@@ -90,6 +94,14 @@ public class Report {
     
     public void setReportedUser(User reportedUser) {
         this.reportedUser = reportedUser;
+    }
+
+    public Comment getComment() {
+        return comment;
+    }
+
+    public void setComment(Comment comment) {
+        this.comment = comment;
     }
     
     public ReportReason getReason() {

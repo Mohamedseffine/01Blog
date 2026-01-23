@@ -73,7 +73,7 @@ export class MainLayoutComponent implements OnInit {
   currentUser$ = this.authService.currentUser$;
   profileImage$ = this.currentUser$.pipe(
     switchMap((user) => {
-      if (!user?.id) return of(this.fallbackAvatar);
+      if (!user?.id || !user.profilePicture) return of(this.fallbackAvatar);
       return this.userService.getProfilePicture(user.id).pipe(
         catchError(() => of(this.fallbackAvatar))
       );

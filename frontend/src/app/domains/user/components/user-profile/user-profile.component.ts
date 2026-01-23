@@ -1,14 +1,17 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { UserService } from '../../services/user.service';
 import { AuthService } from '@core/services/auth.service';
+import { ReportService } from '@domains/report/services/report.service';
+import { ReportReason } from '@domains/report/models/report.model';
 
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="container py-4">
       <ng-container *ngIf="user$ | async as user; else loading">
@@ -51,6 +54,38 @@ import { AuthService } from '@core/services/auth.service';
                 >
                   Edit profile
                 </a>
+                <button
+                  class="btn btn-outline-danger ms-2"
+                  *ngIf="canReportUser(user.id)"
+                  (click)="toggleReport()"
+                  type="button"
+                >
+                  {{ reportOpen() ? 'Cancel Report' : 'Report User' }}
+                </button>
+              </div>
+
+              <div class="card mt-3" *ngIf="reportOpen()">
+                <div class="card-body">
+                  <form (submit)="submitReport($event, user.id)">
+                    <div class="mb-2">
+                      <label class="form-label">Reason</label>
+                      <select class="form-select" [ngModel]="reportReason()" (ngModelChange)="setReportReason($event)" name="userReason" required>
+                        <option *ngFor="let reason of reportReasons" [ngValue]="reason">
+                          {{ reason }}
+                        </option>
+                      </select>
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label">Details (optional)</label>
+                      <textarea class="form-control" rows="2" [ngModel]="reportDescription()" (ngModelChange)="setReportDescription($event)" name="userDescription"></textarea>
+                    </div>
+                    <div *ngIf="reportError()" class="alert alert-danger">{{ reportError() }}</div>
+                    <div *ngIf="reportSuccess()" class="alert alert-success">{{ reportSuccess() }}</div>
+                    <button class="btn btn-sm btn-danger" [disabled]="reportLoading()">
+                      {{ reportLoading() ? 'Submitting...' : 'Submit Report' }}
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -69,17 +104,37 @@ import { AuthService } from '@core/services/auth.service';
 })
 export class UserProfileComponent {
   error = signal<string | null>(null);
+  reportOpen = signal(false);
+  reportReason = signal<ReportReason>('SPAM');
+  reportDescription = signal('');
+  reportError = signal('');
+  reportSuccess = signal('');
+  reportLoading = signal(false);
+  reportReasons: ReportReason[] = [
+    'SPAM',
+    'HARASSMENT',
+    'HATE_SPEECH',
+    'VIOLENCE',
+    'SEXUAL_CONTENT',
+    'MISINFORMATION',
+    'COPYRIGHT',
+    'OTHER'
+  ];
 
   user$ = this.route.paramMap.pipe(
     map((params) => Number(params.get('id'))),
     switchMap((id) => {
-      if (!id || Number.isNaN(id)) {
-        this.error.set('Invalid profile id.');
+      if (!id || Number.isNaN(id) || id < 0) {
+        this.router.navigateByUrl('/not-found');
         return of(null);
       }
       return this.userService.getUserById(id).pipe(
-        catchError(() => {
-          this.error.set('Unable to load profile.');
+        catchError((err) => {
+          if (err?.status === 404) {
+            this.router.navigateByUrl('/not-found');
+          } else {
+            this.error.set('Unable to load profile.');
+          }
           return of(null);
         })
       );
@@ -87,7 +142,7 @@ export class UserProfileComponent {
   );
   profileImage$ = this.user$.pipe(
     switchMap((user) => {
-      if (!user?.id) return of(this.fallbackAvatar);
+      if (!user?.id || !user.profilePicture) return of(this.fallbackAvatar);
       return this.userService.getProfilePicture(user.id).pipe(
         catchError(() => of(this.fallbackAvatar))
       );
@@ -97,7 +152,9 @@ export class UserProfileComponent {
   constructor(
     private route: ActivatedRoute,
     private userService: UserService,
-    private authService: AuthService
+    private authService: AuthService,
+    private reportService: ReportService,
+    private router: Router
   ) {}
 
   private fallbackAvatar =
@@ -107,5 +164,49 @@ export class UserProfileComponent {
     const current = this.authService.getCurrentUserSnapshot();
     if (!current) return false;
     return current.id === userId;
+  }
+
+  setReportReason(value: ReportReason) {
+    this.reportReason.set(value);
+  }
+
+  setReportDescription(value: string) {
+    this.reportDescription.set(value);
+  }
+
+  canReportUser(userId: number) {
+    const current = this.authService.getCurrentUserSnapshot();
+    if (!current) return false;
+    const isAdmin = current.roles?.includes('ADMIN') || current.roles?.includes('ROLE_ADMIN');
+    return !isAdmin && current.id !== userId;
+  }
+
+  toggleReport() {
+    this.reportError.set('');
+    this.reportSuccess.set('');
+    this.reportOpen.set(!this.reportOpen());
+  }
+
+  submitReport(event: Event, userId: number) {
+    event.preventDefault();
+    this.reportError.set('');
+    this.reportSuccess.set('');
+    this.reportLoading.set(true);
+    this.reportService.createReport({
+      reportedUserId: userId,
+      reason: this.reportReason(),
+      description: this.reportDescription().trim() || undefined
+    }).subscribe({
+      next: () => {
+        this.reportLoading.set(false);
+        this.reportSuccess.set('Report submitted.');
+        this.reportDescription.set('');
+        this.reportOpen.set(false);
+      },
+      error: () => {
+        this.reportLoading.set(false);
+        this.reportError.set('Unable to submit report.');
+      }
+    });
   }
 }
