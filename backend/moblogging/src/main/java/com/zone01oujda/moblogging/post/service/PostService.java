@@ -2,6 +2,12 @@ package com.zone01oujda.moblogging.post.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 
 import com.zone01oujda.moblogging.comment.dto.CommentDto;
@@ -17,6 +23,9 @@ import com.zone01oujda.moblogging.post.repository.PostRepository;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
 import com.zone01oujda.moblogging.util.FileUploadUtil;
 import com.zone01oujda.moblogging.util.SecurityUtil;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Service class for post operations
@@ -27,11 +36,14 @@ public class PostService {
     private final FileUploadUtil fileUploadUtil;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final String uploadDir;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, FileUploadUtil fileUploadUtil) {
+    public PostService(PostRepository postRepository, UserRepository userRepository, FileUploadUtil fileUploadUtil,
+            @Value("${files.uploadDirectory}") String uploadDir) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.fileUploadUtil = fileUploadUtil;
+        this.uploadDir = uploadDir;
     }
 
     /**
@@ -84,7 +96,112 @@ public class PostService {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
 
+        if (Boolean.TRUE.equals(post.getHidden()) && !SecurityUtil.hasRole("ADMIN")) {
+            throw new ResourceNotFoundException("Post not found");
+        }
+
         return convertToDto(post);
+    }
+
+    public Page<PostDto> getPosts(int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        if (SecurityUtil.hasRole("ADMIN")) {
+            return postRepository.findAll(pageable).map(this::convertToDto);
+        }
+        return postRepository.findByHiddenFalse(pageable).map(this::convertToDto);
+    }
+
+    public PostDto updatePost(Long postId, com.zone01oujda.moblogging.post.dto.UpdatePostDto dto) {
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+
+        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
+        if (!isAdmin && (post.getCreator() == null || !username.equals(post.getCreator().getUsername()))) {
+            throw new AccessDeniedException("You cannot update this post");
+        }
+
+        if (dto.getPostTitle() != null && !dto.getPostTitle().isBlank()) {
+            post.setTitle(dto.getPostTitle().trim());
+        }
+        if (dto.getPostContent() != null && !dto.getPostContent().isBlank()) {
+            post.setContent(dto.getPostContent().trim());
+        }
+        if (dto.getPostSubject() != null && dto.getPostSubject().length > 0) {
+            post.setSubject(String.join(",", dto.getPostSubject()));
+        }
+        if (dto.getPostVisibility() != null) {
+            post.setPostVisibility(dto.getPostVisibility());
+        }
+
+        Post saved = postRepository.save(post);
+        return convertToDto(saved);
+    }
+
+    public void deletePost(Long postId) {
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+
+        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
+        if (!isAdmin && (post.getCreator() == null || !username.equals(post.getCreator().getUsername()))) {
+            throw new AccessDeniedException("You cannot delete this post");
+        }
+
+        postRepository.delete(post);
+    }
+
+    public Resource getPostMedia(Long postId, int index) {
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+
+        if (post.getMediaUrl() == null || post.getMediaUrl().isBlank()) {
+            throw new ResourceNotFoundException("Media not found");
+        }
+
+        String[] paths = post.getMediaUrl().split(",");
+        if (index < 0 || index >= paths.length) {
+            throw new ResourceNotFoundException("Media not found");
+        }
+
+        String storedPath = paths[index].trim();
+        if (storedPath.isEmpty()) {
+            throw new ResourceNotFoundException("Media not found");
+        }
+
+        String relative = storedPath.startsWith("/") ? storedPath.substring(1) : storedPath;
+        String normalizedBase = uploadDir.endsWith("/") ? uploadDir : uploadDir + "/";
+
+        Path filePath;
+        if (relative.startsWith(normalizedBase)) {
+            filePath = Paths.get(relative);
+        } else {
+            filePath = Paths.get(uploadDir, relative);
+        }
+
+        Path normalizedBasePath = Paths.get(uploadDir).normalize();
+        Path normalizedFile = filePath.normalize();
+        if (!normalizedFile.startsWith(normalizedBasePath)) {
+            throw new ResourceNotFoundException("Media not found");
+        }
+
+        try {
+            Resource resource = new UrlResource(normalizedFile.toUri());
+            if (!resource.exists()) {
+                throw new ResourceNotFoundException("Media not found");
+            }
+            return resource;
+        } catch (MalformedURLException e) {
+            throw new ResourceNotFoundException("Media not found");
+        }
     }
 
     /**
@@ -131,9 +248,9 @@ public class PostService {
      * @return PostDto
      */
     private PostDto convertToDto(Post post) {
-        List<CommentDto> comments = post.getComments().stream()
-            .map(CommentMapper::toDto)
-            .toList();
+        List<CommentDto> comments = (post.getComments() == null)
+            ? List.of()
+            : post.getComments().stream().map(CommentMapper::toDto).toList();
 
         String[] mediaUrls = (post.getMediaUrl() != null && !post.getMediaUrl().isEmpty())
             ? post.getMediaUrl().split(",")

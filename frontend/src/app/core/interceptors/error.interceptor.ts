@@ -12,6 +12,7 @@ export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
   const auth = inject(AuthService);
   const isAuthRequest = req.url.includes('/auth/login')
     || req.url.includes('/auth/register')
+    || req.url.includes('/auth/me')
     || req.url.includes('/auth/refresh')
     || req.url.includes('/auth/logout');
 

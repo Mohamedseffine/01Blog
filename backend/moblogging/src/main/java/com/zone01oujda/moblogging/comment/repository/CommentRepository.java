@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import com.zone01oujda.moblogging.entity.Comment;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
+    Page<Comment> findByPostIdAndHiddenFalse(Long postId, Pageable pageable);
+
     @Query("""
         SELECT c FROM Comment c
         WHERE (:hidden IS NULL OR c.hidden = :hidden)

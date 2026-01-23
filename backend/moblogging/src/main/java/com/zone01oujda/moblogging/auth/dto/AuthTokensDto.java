@@ -1,5 +1,6 @@
 package com.zone01oujda.moblogging.auth.dto;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -8,4 +9,5 @@ import lombok.Data;
 public class AuthTokensDto {
     private String accessToken;
     private String refreshToken;
+    // private Role role;
 }

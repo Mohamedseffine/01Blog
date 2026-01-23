@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.zone01oujda.moblogging.report.dto.CreateReportDto;
 import com.zone01oujda.moblogging.report.service.ReportService;
 import com.zone01oujda.moblogging.util.response.ApiResponse;
 
@@ -27,7 +28,8 @@ public class ReportController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Object>> createReport(@Valid @RequestBody Object reportDto) {
+    public ResponseEntity<ApiResponse<Void>> createReport(@Valid @RequestBody CreateReportDto reportDto) {
+        reportService.createReport(reportDto);
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(new ApiResponse<>(true, "Report submitted successfully", null));
     }

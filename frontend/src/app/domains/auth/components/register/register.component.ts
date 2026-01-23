@@ -63,6 +63,11 @@ import { NotificationService } from '@domains/notification/services/notification
                   </select>
                 </div>
 
+                <div class="mb-3">
+                  <label class="form-label">Profile image</label>
+                  <input type="file" class="form-control" accept="image/*" (change)="onFileChange($event)" />
+                </div>
+
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <label class="form-label"></label>
@@ -89,6 +94,7 @@ export class RegisterComponent {
   model = signal({
     firstName: '', lastName: '', username: '', email: '', password: '', confirmPassword: '', birthDate: '', gender: 'MALE', profileType: 'PUBLIC'
   });
+  profilePicture = signal<File | null>(null);
   loading = signal(false);
   error = signal('');
 
@@ -109,6 +115,12 @@ export class RegisterComponent {
     this.model.update((current) => ({ ...current, ...patch }));
   }
 
+  onFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files[0] ? input.files[0] : null;
+    this.profilePicture.set(file);
+  }
+
   submit(e: Event) {
     e.preventDefault();
     this.error.set('');
@@ -123,7 +135,7 @@ export class RegisterComponent {
       return;
     }
     this.loading.set(true);
-    const payload = { ...model };
+    const payload = { ...model, profilePicture: this.profilePicture() || undefined };
     // ensure birthDate is ISO string if set
     if (payload.birthDate) payload.birthDate = payload.birthDate;
     console.log(payload.password);

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { environment } from '@env/environment';
 import { User, UserProfile, UpdateProfileDto } from '../models/user.model';
@@ -14,11 +14,15 @@ export class UserService {
   constructor(private http: HttpClient) { }
 
   getUserById(id: number): Observable<UserProfile> {
-    return this.http.get<UserProfile>(`${this.apiUrl}/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      map((res) => res?.data ?? res)
+    );
   }
 
   getCurrentUser(): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/current`);
+    return this.http.get<any>(`${this.apiUrl}/current`).pipe(
+      map((res) => res?.data ?? res)
+    );
   }
 
   updateProfile(id: number, dto: UpdateProfileDto): Observable<User> {
@@ -26,7 +30,15 @@ export class UserService {
     if (dto.username) formData.append('username', dto.username);
     if (dto.bio) formData.append('bio', dto.bio);
     if (dto.profilePicture) formData.append('profilePicture', dto.profilePicture);
-    return this.http.put<User>(`${this.apiUrl}/${id}`, formData);
+    return this.http.put<any>(`${this.apiUrl}/${id}`, formData).pipe(
+      map((res) => res?.data ?? res)
+    );
+  }
+
+  getProfilePicture(userId: number): Observable<string> {
+    return this.http.get(`${this.apiUrl}/${userId}/profile-picture`, { responseType: 'blob' }).pipe(
+      map((blob) => URL.createObjectURL(blob))
+    );
   }
 
   followUser(userId: number): Observable<void> {

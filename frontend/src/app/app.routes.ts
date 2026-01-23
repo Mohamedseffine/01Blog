@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './domains/auth/guards/admin.guard';
+import { authGuard } from './domains/auth/guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./layouts/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
+    canActivateChild: [authGuard],
     children: [
       {
         path: 'auth',
@@ -39,6 +41,10 @@ export const routes: Routes = [
         path: '',
         redirectTo: '/posts',
         pathMatch: 'full'
+      },
+      {
+        path: '**',
+        loadComponent: () => import('./core/components/not-found/not-found.component').then(m => m.NotFoundComponent)
       }
     ]
   }

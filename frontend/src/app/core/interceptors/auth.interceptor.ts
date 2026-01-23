@@ -8,8 +8,10 @@ import { AuthService } from '@core/services/auth.service';
 export const authInterceptor: HttpInterceptorFn = (req: any, next: any) => {
   const authService = inject(AuthService);
   const token = authService.getToken();
+  const skipAuthEndpoints = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'];
+  const isSkipAuth = skipAuthEndpoints.some((endpoint) => req.url.includes(endpoint));
 
-  if (token && !req.url.includes('/auth/')) {
+  if (token && !isSkipAuth) {
     req = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`

@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { AdminService } from '../../services/admin.service';
 import { AdminUser, Page } from '../../models/admin.model';
@@ -8,7 +9,7 @@ import { AdminUser, Page } from '../../models/admin.model';
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -66,6 +67,9 @@ import { AdminUser, Page } from '../../models/admin.model';
                 >
               </td>
               <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary me-2" [routerLink]="['/users/profile', user.id]">
+                  View
+                </a>
                 <button
                   class="btn btn-sm btn-danger me-2"
                   (click)="ban(user)"

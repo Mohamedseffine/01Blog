@@ -105,6 +105,18 @@ public class AdminController {
         );
     }
 
+    @PostMapping("/posts/{postId}/hide")
+    public ResponseEntity<ApiResponse<Void>> hidePost(@PathVariable("postId") Long postId) {
+        adminService.hidePost(postId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Post hidden successfully"));
+    }
+
+    @PostMapping("/posts/{postId}/unhide")
+    public ResponseEntity<ApiResponse<Void>> unhidePost(@PathVariable("postId") Long postId) {
+        adminService.unhidePost(postId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Post unhidden successfully"));
+    }
+
     @GetMapping("/reports")
     public ResponseEntity<ApiResponse<Page<AdminReportDto>>> getReports(
             @RequestParam(defaultValue = "0") int page,

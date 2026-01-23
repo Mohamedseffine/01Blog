@@ -2,6 +2,9 @@ package com.zone01oujda.moblogging.comment.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.zone01oujda.moblogging.comment.dto.CommentDto;
@@ -84,6 +87,50 @@ public class CommentService {
         return convertToDto(comment);
     }
 
+    public Page<CommentDto> getCommentsByPost(Long postId, int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "createdAt"));
+        return commentRepository.findByPostIdAndHiddenFalse(postId, pageable)
+                .map(this::convertToDto);
+    }
+
+    public CommentDto updateComment(Long commentId, String content) {
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+
+        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
+        if (!isAdmin && (comment.getCreator() == null || !username.equals(comment.getCreator().getUsername()))) {
+            throw new AccessDeniedException("You cannot update this comment");
+        }
+
+        comment.setContent(content);
+        comment.setModified(true);
+        comment.setModifiedAt(java.time.LocalDateTime.now());
+        Comment saved = commentRepository.save(comment);
+        return convertToDto(saved);
+    }
+
+    public void deleteComment(Long commentId) {
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+
+        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
+        if (!isAdmin && (comment.getCreator() == null || !username.equals(comment.getCreator().getUsername()))) {
+            throw new AccessDeniedException("You cannot delete this comment");
+        }
+
+        commentRepository.delete(comment);
+    }
+
     /**
      * Convert Comment entity to CommentDto
      * @param comment the comment entity
@@ -98,13 +145,15 @@ public class CommentService {
             comment.getCreatedAt(),
             comment.getModifiedAt(),
             comment.getModified(),
-            comment.getPost().getId()
+            comment.getPost().getId(),
+            comment.getCreator() != null ? comment.getCreator().getId() : null,
+            comment.getCreator() != null ? comment.getCreator().getUsername() : null
         );
 
         // Add child comments
-        List<CommentDto> childDtos = comment.getChildren().stream()
-                .map(CommentMapper::toDto)
-                .toList();
+        List<CommentDto> childDtos = (comment.getChildren() == null)
+            ? List.of()
+            : comment.getChildren().stream().map(CommentMapper::toDto).toList();
         dto.setChildren(childDtos);
 
         return dto;

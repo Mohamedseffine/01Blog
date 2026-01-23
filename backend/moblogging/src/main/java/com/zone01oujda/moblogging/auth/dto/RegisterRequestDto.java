@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import com.zone01oujda.moblogging.user.enums.Gender;
 import com.zone01oujda.moblogging.user.enums.ProfileType;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -81,4 +82,9 @@ public class RegisterRequestDto {
      */
     @NotNull(message = "Profile type is required")
     public ProfileType profileType;
+
+    /**
+     * Optional profile picture
+     */
+    public MultipartFile profilePicture;
 }

@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '@core/services/auth.service';
+import { catchError, map, of } from 'rxjs';
 
 type JwtPayload = {
   role?: string;
@@ -24,8 +25,7 @@ export const adminGuard = () => {
   const router = inject(Router);
   const token = authService.getToken();
   if (!token) {
-    router.navigate(['/auth/login']);
-    return false;
+    return router.createUrlTree(['/auth/login']);
   }
 
   const payload = parseJwtPayload(token);
@@ -34,6 +34,11 @@ export const adminGuard = () => {
     return true;
   }
 
-  router.navigate(['/posts']);
-  return false;
+  return authService.getCurrentUser().pipe(
+    map((user) => {
+      const isAdmin = user?.roles?.some((r) => r === 'ADMIN' || r === 'ROLE_ADMIN') ?? false;
+      return isAdmin ? true : router.createUrlTree(['/posts']);
+    }),
+    catchError(() => of(router.createUrlTree(['/auth/login'])))
+  );
 };

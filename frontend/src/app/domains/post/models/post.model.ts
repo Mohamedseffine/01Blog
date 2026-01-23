@@ -4,41 +4,39 @@
  */
 export interface Post {
   id: number;
-  title: string;
-  content: string;
-  description?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  creatorId: number;
-  mediaUrls?: string[];
-  status: PostStatus;
+  creatorUsername: string;
+  postTitle: string;
+  postContent: string;
+  postSubject: string[];
+  postVisibility: PostVisibility;
+  medias?: string[];
 }
 
 export interface CreatePostDto {
-  title: string;
-  content: string;
-  description?: string;
-  mediaFiles?: File[];
+  postTitle: string;
+  postContent: string;
+  postSubject: string[];
+  postVisibility: PostVisibility;
+  multipartFiles?: File[];
 }
 
 export interface UpdatePostDto {
-  title?: string;
-  content?: string;
-  description?: string;
+  postTitle?: string;
+  postContent?: string;
+  postSubject?: string[];
+  postVisibility?: PostVisibility;
 }
 
-export enum PostStatus {
-  PUBLISHED = 'PUBLISHED',
-  DRAFT = 'DRAFT',
-  ARCHIVED = 'ARCHIVED'
+export enum PostVisibility {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE',
+  CLOSEFRIEND = 'CLOSEFRIEND'
 }
 
 export interface PostListResponse {
   content: Post[];
-  pageable: {
-    pageNumber: number;
-    pageSize: number;
-    totalPages: number;
-    totalElements: number;
-  };
+  number: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
 }

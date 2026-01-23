@@ -1,84 +1,93 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { PostService } from '../../services/post.service';
+import { Post } from '../../models/post.model';
 
 @Component({
   selector: 'app-post-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <div class="post-list">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Posts</h1>
-        <a href="/posts/create" class="btn btn-primary">
+        <a routerLink="/posts/create" class="btn btn-primary">
           <i class="bi bi-plus-circle"></i> Create Post
         </a>
       </div>
 
+      <div *ngIf="loading()" class="text-muted">Loading posts...</div>
+      <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
+      <div *ngIf="!loading() && !posts().length" class="text-muted">
+        No posts yet.
+      </div>
+
       <div class="row g-4">
-        <div class="col-md-6 col-lg-4">
+        <div class="col-md-6 col-lg-4" *ngFor="let post of posts()">
           <div class="card h-100 shadow-sm">
-            <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Post">
             <div class="card-body">
-              <h5 class="card-title">Sample Post Title</h5>
+              <h5 class="card-title">{{ post.postTitle }}</h5>
               <p class="card-text text-muted text-truncate-multiline">
-                This is a sample post description. It shows how posts will be displayed in the list view.
+                {{ post.postContent }}
               </p>
               <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">Jan 19, 2026</small>
-                <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
+                <small class="text-muted">by {{ post.creatorUsername }}</small>
+                <a [routerLink]="['/posts', post.id]" class="btn btn-sm btn-outline-primary">Read More</a>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm">
-            <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Post">
-            <div class="card-body">
-              <h5 class="card-title">Another Sample Post</h5>
-              <p class="card-text text-muted text-truncate-multiline">
-                This demonstrates how multiple posts will be displayed in a responsive grid layout.
-              </p>
-              <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">Jan 18, 2026</small>
-                <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm">
-            <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Post">
-            <div class="card-body">
-              <h5 class="card-title">Third Sample Post</h5>
-              <p class="card-text text-muted text-truncate-multiline">
-                The layout is fully responsive and will adapt to different screen sizes.
-              </p>
-              <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">Jan 17, 2026</small>
-                <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
-              </div>
+            <div class="card-footer bg-light small text-muted">
+              {{ post.postSubject.join(', ') }}
             </div>
           </div>
         </div>
       </div>
 
       <!-- Pagination -->
-      <nav aria-label="Page navigation" class="mt-5">
+      <nav aria-label="Page navigation" class="mt-5" *ngIf="totalPages() > 1">
         <ul class="pagination justify-content-center">
-          <li class="page-item disabled">
-            <a class="page-link" href="#" tabindex="-1">Previous</a>
+          <li class="page-item" [class.disabled]="page() === 0">
+            <button class="page-link" type="button" (click)="loadPage(page() - 1)" [disabled]="page() === 0">Previous</button>
           </li>
-          <li class="page-item active"><a class="page-link" href="#">1</a></li>
-          <li class="page-item"><a class="page-link" href="#">2</a></li>
-          <li class="page-item"><a class="page-link" href="#">3</a></li>
-          <li class="page-item">
-            <a class="page-link" href="#">Next</a>
+          <li class="page-item active">
+            <span class="page-link">{{ page() + 1 }}</span>
+          </li>
+          <li class="page-item" [class.disabled]="page() + 1 >= totalPages()">
+            <button class="page-link" type="button" (click)="loadPage(page() + 1)" [disabled]="page() + 1 >= totalPages()">Next</button>
           </li>
         </ul>
       </nav>
     </div>
   `,
 })
-export class PostListComponent { }
+export class PostListComponent implements OnInit {
+  posts = signal<Post[]>([]);
+  loading = signal(false);
+  error = signal('');
+  page = signal(0);
+  totalPages = signal(0);
+
+  constructor(private postService: PostService) {}
+
+  ngOnInit() {
+    this.loadPage(0);
+  }
+
+  loadPage(page: number) {
+    if (page < 0) return;
+    this.loading.set(true);
+    this.error.set('');
+    this.postService.getPosts(page, 9).subscribe({
+      next: (res) => {
+        this.posts.set(res?.content ?? []);
+        this.page.set(res?.number ?? 0);
+        this.totalPages.set(res?.totalPages ?? 0);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.error.set('Unable to load posts.');
+      }
+    });
+  }
+}

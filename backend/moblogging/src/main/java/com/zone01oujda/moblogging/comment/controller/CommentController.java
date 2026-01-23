@@ -5,8 +5,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.zone01oujda.moblogging.comment.dto.CommentDto;
@@ -39,6 +42,31 @@ public class CommentController {
         return ResponseEntity.ok(
             new ApiResponse<>(true, "Comment retrieved successfully", comment)
         );
+    }
+
+    @GetMapping("/post/{postId}")
+    public ResponseEntity<ApiResponse<org.springframework.data.domain.Page<CommentDto>>> getByPost(
+            @PathVariable("postId") Long postId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(
+            new ApiResponse<>(true, "Comments retrieved successfully",
+                commentService.getCommentsByPost(postId, page, size))
+        );
+    }
+
+    @PutMapping("/{commentId}")
+    public ResponseEntity<ApiResponse<CommentDto>> updateComment(
+            @PathVariable("commentId") Long commentId,
+            @RequestBody CreateCommentDto updateDto) {
+        CommentDto comment = commentService.updateComment(commentId, updateDto.content);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Comment updated successfully", comment));
+    }
+
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable("commentId") Long commentId) {
+        commentService.deleteComment(commentId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Comment deleted successfully"));
     }
     
 }

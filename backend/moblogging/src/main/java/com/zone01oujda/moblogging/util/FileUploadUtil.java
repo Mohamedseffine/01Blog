@@ -29,13 +29,13 @@ public class FileUploadUtil {
         
         try {
             String type = mediaValidator.detectMimeType(file);
-            String subDir = type.startsWith("image") ? "/images" : "/videos";
+            String subDir = type.startsWith("image") ? "images" : "videos";
             
             if (!type.startsWith("image") && !type.startsWith("video")) {
                 throw new IllegalArgumentException("Unsupported file type: " + type);
             }
             
-            Path path = Paths.get(".", uploadDir, subDir);
+            Path path = Paths.get(uploadDir, subDir);
             if (!Files.exists(path)) {
                 Files.createDirectories(path);
             }
@@ -46,8 +46,12 @@ public class FileUploadUtil {
             
             Path uploadPath = path.resolve(newName + fileExtension);
             Files.write(uploadPath, file.getBytes());
-            
-            return uploadPath.toString();
+
+            String webBase = uploadDir.startsWith("/") ? uploadDir : "/" + uploadDir;
+            if (webBase.endsWith("/")) {
+                webBase = webBase.substring(0, webBase.length() - 1);
+            }
+            return webBase + "/" + subDir + "/" + newName + fileExtension;
         } catch (IOException e) {
             throw new RuntimeException("Error reading/writing file: " + e.getMessage(), e);
         }

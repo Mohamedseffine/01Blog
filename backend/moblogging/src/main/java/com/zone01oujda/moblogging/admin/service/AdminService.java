@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -98,8 +99,20 @@ public class AdminService {
             PostVisibility visibility,
             Boolean hidden, Long creatorId, String creatorUsername) {
         Sort sort = Sort.by(parseSortDir(sortDir), "createdAt");
-        return postRepository.findForAdmin(visibility, hidden, creatorId, creatorUsername, PageRequest.of(page, size, sort))
+        Page<AdminPostDto> base = postRepository
+            .findForAdmin(visibility, hidden, creatorId, PageRequest.of(page, size, sort))
             .map(this::toAdminPostDto);
+
+        if (creatorUsername == null || creatorUsername.isBlank()) {
+            return base;
+        }
+
+        String needle = creatorUsername.toLowerCase();
+        java.util.List<AdminPostDto> filtered = base.getContent().stream()
+            .filter(dto -> dto.getCreatorUsername() != null
+                && dto.getCreatorUsername().toLowerCase().contains(needle))
+            .toList();
+        return new PageImpl<>(filtered, base.getPageable(), filtered.size());
     }
 
     /**
@@ -161,6 +174,20 @@ public class AdminService {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
         postRepository.delete(post);
+    }
+
+    public void hidePost(Long postId) {
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        post.setHidden(true);
+        postRepository.save(post);
+    }
+
+    public void unhidePost(Long postId) {
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        post.setHidden(false);
+        postRepository.save(post);
     }
 
     /**

@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { WebSocketService } from '@core/services/websocket.service';
 import { NotificationService } from '@domains/notification/services/notification.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="login-container">
       <div class="row justify-content-center">
@@ -74,7 +75,7 @@ import { NotificationService } from '@domains/notification/services/notification
 
               <div class="text-center mt-3">
                 <p class="text-muted">Don't have an account? 
-                  <a href="/auth/register" class="text-primary text-decoration-none fw-bold">Sign up here</a>
+                  <a routerLink="/auth/register" class="text-primary text-decoration-none fw-bold">Sign up here</a>
                 </p>
               </div>
             </div>

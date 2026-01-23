@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { environment } from '@env/environment';
 import { Comment, CreateCommentDto, CommentListResponse } from '../models/comment.model';
@@ -17,22 +17,32 @@ export class CommentService {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    return this.http.get<CommentListResponse>(`${this.apiUrl}/post/${postId}`, { params });
+    return this.http.get<any>(`${this.apiUrl}/post/${postId}`, { params }).pipe(
+      map((res) => res?.data ?? res)
+    );
   }
 
   getCommentById(id: number): Observable<Comment> {
-    return this.http.get<Comment>(`${this.apiUrl}/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      map((res) => res?.data ?? res)
+    );
   }
 
   createComment(dto: CreateCommentDto): Observable<Comment> {
-    return this.http.post<Comment>(this.apiUrl, dto);
+    return this.http.post<any>(this.apiUrl, dto).pipe(
+      map((res) => res?.data ?? res)
+    );
   }
 
   updateComment(id: number, content: string): Observable<Comment> {
-    return this.http.put<Comment>(`${this.apiUrl}/${id}`, { content });
+    return this.http.put<any>(`${this.apiUrl}/${id}`, { content }).pipe(
+      map((res) => res?.data ?? res)
+    );
   }
 
   deleteComment(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(
+      map((res) => res?.data ?? res)
+    );
   }
 }

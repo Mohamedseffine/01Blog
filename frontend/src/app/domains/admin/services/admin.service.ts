@@ -82,6 +82,14 @@ export class AdminService {
     return this.http.delete<ApiResponse<void>>(`${this.base}/posts/${postId}`);
   }
 
+  hidePost(postId: number): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.base}/posts/${postId}/hide`, {});
+  }
+
+  unhidePost(postId: number): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.base}/posts/${postId}/unhide`, {});
+  }
+
   private buildParams(values: Record<string, string | number | boolean | undefined | null>): HttpParams {
     let params = new HttpParams();
     Object.entries(values).forEach(([key, value]) => {

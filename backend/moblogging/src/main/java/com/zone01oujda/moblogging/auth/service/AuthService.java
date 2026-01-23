@@ -25,6 +25,7 @@ import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
 import com.zone01oujda.moblogging.security.JwtTokenProvider;
 import com.zone01oujda.moblogging.user.enums.Role;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
+import com.zone01oujda.moblogging.util.FileUploadUtil;
 
 /**
  * Service class for authentication operations
@@ -39,15 +40,17 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
+    private final FileUploadUtil fileUploadUtil;
 
     public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
             PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
-            JwtTokenProvider tokenProvider) {
+            JwtTokenProvider tokenProvider, FileUploadUtil fileUploadUtil) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.tokenProvider = tokenProvider;
         this.passwordEncoder = passwordEncoder;
+        this.fileUploadUtil = fileUploadUtil;
     }
 
     /**
@@ -86,6 +89,10 @@ public class AuthService {
             user.setFirstName(dto.firstName);
             user.setLastName(dto.lastName);
             user.setRole(Role.USER);
+            if (dto.profilePicture != null && !dto.profilePicture.isEmpty()) {
+                String uploadedPath = fileUploadUtil.upload(dto.profilePicture);
+                user.setProfilePictureUrl(uploadedPath);
+            }
 
             User savedUser = userRepository.save(user);
             return issueTokens(savedUser);

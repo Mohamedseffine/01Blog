@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { AdminService } from '../../services/admin.service';
 import { AdminPost, Page } from '../../models/admin.model';
@@ -8,7 +9,7 @@ import { AdminPost, Page } from '../../models/admin.model';
 @Component({
   selector: 'app-post-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -87,6 +88,15 @@ import { AdminPost, Page } from '../../models/admin.model';
               <td>{{ post.creatorUsername || post.creatorId || 'Unknown' }}</td>
               <td>{{ post.createdAt | date:'short' }}</td>
               <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary me-2" [routerLink]="['/posts', post.id]">
+                  View
+                </a>
+                <button
+                  class="btn btn-sm btn-outline-warning me-2"
+                  (click)="toggleHidden(post)"
+                >
+                  {{ post.hidden ? 'Unhide' : 'Hide' }}
+                </button>
                 <button class="btn btn-sm btn-outline-danger" (click)="deletePost(post)">
                   Delete
                 </button>
@@ -125,7 +135,7 @@ export class PostManagementComponent implements OnInit {
   creatorUsername = '';
   sortDir = 'desc';
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService) { }
 
   ngOnInit(): void {
     this.refresh();
@@ -177,4 +187,24 @@ export class PostManagementComponent implements OnInit {
       }
     });
   }
+
+  toggleHidden(post: AdminPost) {
+    const newHidden = !post.hidden;
+
+    const request = newHidden
+      ? this.adminService.hidePost(post.id)
+      : this.adminService.unhidePost(post.id);
+
+    request.subscribe({
+      next: () => {
+        this.posts.update(list =>
+          list.map(p => p.id === post.id ? { ...p, hidden: newHidden } : p)
+        );
+      },
+      error: () => {
+        this.error.set(`Failed to ${post.hidden ? 'unhide' : 'hide'} post #${post.id}.`);
+      }
+    });
+  }
+
 }

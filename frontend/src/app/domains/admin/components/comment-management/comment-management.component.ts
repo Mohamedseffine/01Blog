@@ -1,13 +1,14 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AdminService } from '../../services/admin.service';
 import { AdminComment, Page } from '../../models/admin.model';
 
 @Component({
   selector: 'app-comment-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -69,6 +70,7 @@ import { AdminComment, Page } from '../../models/admin.model';
               <th>Creator</th>
               <th>Created</th>
               <th>Status</th>
+              <th class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -82,6 +84,15 @@ import { AdminComment, Page } from '../../models/admin.model';
                 <span class="badge" [class.bg-secondary]="comment.hidden" [class.bg-success]="!comment.hidden">
                   {{ comment.hidden ? 'Hidden' : 'Visible' }}
                 </span>
+              </td>
+              <td class="text-end">
+                <a
+                  *ngIf="comment.postId"
+                  class="btn btn-sm btn-outline-primary"
+                  [routerLink]="['/posts', comment.postId]"
+                >
+                  View Post
+                </a>
               </td>
             </tr>
           </tbody>

@@ -12,9 +12,17 @@ public final class CommentMapper {
         if (comment == null)
             return null;
 
-        CommentDto dto = new CommentDto(comment.getId(), comment.getParent() != null ? comment.getParent().getId() : 0, comment.getContent(),
-                comment.getHidden(), comment.getCreatedAt(), comment.getModifiedAt(), comment.getModified(),
-                comment.getPost().getId());
+        CommentDto dto = new CommentDto(
+                comment.getId(),
+                comment.getParent() != null ? comment.getParent().getId() : null,
+                comment.getContent(),
+                comment.getHidden(),
+                comment.getCreatedAt(),
+                comment.getModifiedAt(),
+                comment.getModified(),
+                comment.getPost().getId(),
+                comment.getCreator().getId(),
+                comment.getCreator().getUsername());
 
         dto.setParentId(
                 comment.getParent() == null ? 0 : comment.getParent().getId());
