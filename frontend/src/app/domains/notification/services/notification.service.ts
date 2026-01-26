@@ -1,12 +1,13 @@
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, map } from 'rxjs';
+import { BehaviorSubject, Observable, map, catchError, of } from 'rxjs';
 
 import { environment } from '@env/environment';
 import { Notification, NotificationResponse } from '../models/notification.model';
 import { NotificationWebSocketClient } from '@core/utils/notification-websocket-client';
 import { CurrentUser } from '@domains/auth/models/auth.model';
 import { AuthService } from '@core/services/auth.service';
+import { ErrorService } from '@core/services/error.service';
 
 @Injectable({
   providedIn: 'root'
@@ -21,6 +22,7 @@ export class NotificationService {
   constructor(
     private http: HttpClient,
     private authService: AuthService,
+    private errorService: ErrorService,
     private ngZone: NgZone
   ) { }
 
@@ -33,38 +35,66 @@ export class NotificationService {
         if (data?.content) {
           this.notificationsSubject.next(data.content);
         }
-        return data;
+        return data as NotificationResponse;
+      }),
+      catchError((error) => {
+        return of({
+          content: [],
+          number: 0,
+          size: size,
+          totalPages: 0,
+          totalElements: 0
+        } as NotificationResponse);
       })
     );
   }
 
   getUnreadNotifications(): Observable<Notification[]> {
     return this.http.get<any>(`${this.apiUrl}/unread`).pipe(
-      map((res) => res?.data ?? res)
+      map((res) => res?.data ?? res),
+      catchError((error) => {
+        return of([]);
+      })
     );
   }
 
   markAsRead(id: number): Observable<void> {
     return this.http.put<any>(`${this.apiUrl}/${id}/read`, {}).pipe(
-      map(() => void 0)
+      map(() => void 0),
+      catchError((error) => {
+        this.errorService.addWarning('Could not mark notification as read');
+        return of(void 0);
+      })
     );
   }
 
   markAsUnread(id: number): Observable<void> {
     return this.http.put<any>(`${this.apiUrl}/${id}/unread`, {}).pipe(
-      map(() => void 0)
+      map(() => void 0),
+      catchError((error) => {
+        this.errorService.addWarning('Could not mark notification as unread');
+        return of(void 0);
+      })
     );
   }
 
   markAllAsRead(): Observable<void> {
     return this.http.put<any>(`${this.apiUrl}/read-all`, {}).pipe(
-      map(() => void 0)
+      map(() => void 0),
+      catchError((error) => {
+        this.errorService.addWarning('Could not mark all notifications as read');
+        return of(void 0);
+      })
     );
   }
 
   deleteNotification(id: number): Observable<void> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(
-      map(() => void 0)
+      map(() => void 0),
+      catchError((error) => {
+        this.errorService.addWarning('Could not delete notification');
+        return of(void 0);
+      })
     );
   }
 
@@ -96,7 +126,10 @@ export class NotificationService {
     this.wsClient.connect(
       token,
       (msg) => this.onNotificationReceived(msg),
-      () => {},
+      () => {
+
+        this.errorService.addWarning('Connection error. Notifications may be delayed.');
+      },
       () => {
         this.wsClient?.send('/app/users/connect', user.id);
       }

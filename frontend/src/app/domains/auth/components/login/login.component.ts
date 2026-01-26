@@ -52,19 +52,7 @@ import { NotificationService } from '@domains/notification/services/notification
                   >
                 </div>
 
-                <div class="mb-2 form-check">
-                  <input 
-                    type="checkbox" 
-                    class="form-check-input" 
-                    id="remember"
-                    [ngModel]="rememberMe()"
-                    (ngModelChange)="rememberMe.set($event)"
-                    name="rememberMe"
-                  >
-                  <label class="form-check-label" for="remember">
-                    Remember me
-                  </label>
-                </div>
+                
 
                 <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" [disabled]="loading()">
                   <i class="bi bi-box-arrow-in-right"></i>
@@ -81,17 +69,7 @@ import { NotificationService } from '@domains/notification/services/notification
             </div>
           </div>
 
-          <!-- Social Login -->
-          <div class="mt-4">
-            <div class="text-center mb-3">
-              <span class="text-muted small">Or continue with</span>
-            </div>
-            <div class="d-grid gap-2">
-              <button type="button" class="btn btn-outline-secondary">
-                <i class="bi bi-google"></i> Google
-              </button>
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>
@@ -100,7 +78,6 @@ import { NotificationService } from '@domains/notification/services/notification
 export class LoginComponent {
   email = signal('');
   password = signal('');
-  rememberMe = signal(false);
   loading = signal(false);
 
   constructor(private auth: AuthService, private router: Router,

@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
                 while (root.getCause() != null)
                         root = root.getCause();
 
-                logger.error("Multipart error: {} {}", root.getClass().getName(), root.getMessage(), ex);
+                logger.warn("Multipart error: {} {}", root.getClass().getName(), root.getMessage());
 
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .body(new ErrorResponseDto(false,

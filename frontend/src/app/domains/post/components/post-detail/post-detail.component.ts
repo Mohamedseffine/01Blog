@@ -12,6 +12,7 @@ import { ReactSummary, ReactType } from '@domains/react/models/react.model';
 import { AuthService } from '@core/services/auth.service';
 import { Comment } from '@domains/comment/models/comment.model';
 import { PostService } from '../../services/post.service';
+import { ErrorService } from '@core/services/error.service';
 
 @Component({
   selector: 'app-post-detail',
@@ -286,7 +287,8 @@ export class PostDetailComponent {
     private authService: AuthService,
     private router: Router,
     private reportService: ReportService,
-    private reactService: ReactService
+    private reactService: ReactService,
+    private errorService: ErrorService
   ) {
     this.post$.subscribe((post) => {
       if (post?.id) {
@@ -294,6 +296,18 @@ export class PostDetailComponent {
         this.loadPostReacts(post.id);
       }
     });
+  }
+
+  private emptySummary(): ReactSummary {
+    return { likeCount: 0, dislikeCount: 0, userReact: null };
+  }
+
+  private handlePostReactError(error: any, message: string) {
+    if (error?.status === 404) {
+      this.router.navigate(['/not-found']);
+      return;
+    }
+    this.errorService.addWarning(message);
   }
 
   loadComments(postId: number) {
@@ -463,7 +477,10 @@ export class PostDetailComponent {
   loadPostReacts(postId: number) {
     this.reactService.getPostSummary(postId).subscribe({
       next: (summary) => this.postReacts.set(summary),
-      error: () => this.postReacts.set({ likeCount: 0, dislikeCount: 0, userReact: null })
+      error: (err) => {
+        this.postReacts.set(this.emptySummary());
+        this.handlePostReactError(err, 'Unable to load post reactions.');
+      }
     });
   }
 
@@ -471,12 +488,14 @@ export class PostDetailComponent {
     const current = this.postReacts();
     if (current?.userReact === type) {
       this.reactService.removePostReact(postId).subscribe({
-        next: (summary) => this.postReacts.set(summary)
+        next: (summary) => this.postReacts.set(summary),
+        error: (err) => this.handlePostReactError(err, 'Unable to update reaction.')
       });
       return;
     }
     this.reactService.reactToPost(postId, type).subscribe({
-      next: (summary) => this.postReacts.set(summary)
+      next: (summary) => this.postReacts.set(summary),
+      error: (err) => this.handlePostReactError(err, 'Unable to update reaction.')
     });
   }
 
@@ -489,6 +508,11 @@ export class PostDetailComponent {
       next: (summary) => {
         const current = this.commentReactMap();
         this.commentReactMap.set({ ...current, [commentId]: summary });
+      },
+      error: () => {
+        const current = this.commentReactMap();
+        this.commentReactMap.set({ ...current, [commentId]: this.emptySummary() });
+        this.errorService.addWarning('Unable to load comment reactions.');
       }
     });
   }
@@ -504,7 +528,8 @@ export class PostDetailComponent {
         next: (summary) => {
           const map = this.commentReactMap();
           this.commentReactMap.set({ ...map, [commentId]: summary });
-        }
+        },
+        error: () => this.errorService.addWarning('Unable to update reaction.')
       });
       return;
     }
@@ -512,7 +537,8 @@ export class PostDetailComponent {
       next: (summary) => {
         const map = this.commentReactMap();
         this.commentReactMap.set({ ...map, [commentId]: summary });
-      }
+      },
+      error: () => this.errorService.addWarning('Unable to update reaction.')
     });
   }
 }

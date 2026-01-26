@@ -5,11 +5,13 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { Router } from '@angular/router';
 import { WebSocketService } from '@core/services/websocket.service';
 import { NotificationService } from '@domains/notification/services/notification.service';
+import { RouterLink } from '@angular/router';
+
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="container py-4">
       <div class="row justify-content-center">
@@ -83,6 +85,12 @@ import { NotificationService } from '@domains/notification/services/notification
 
                 <button class="btn btn-success w-100" [disabled]="loading()">{{ loading() ? 'Creating...' : 'Create account' }}</button>
               </form>
+
+              <div class="text-center mt-3">
+                <p class="text-muted">Don't have an account? 
+                  <a routerLink="/auth/login" class="text-primary text-decoration-none fw-bold">Sign in here</a>
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -99,7 +107,7 @@ export class RegisterComponent {
   error = signal('');
 
   constructor(private auth: AuthService, private router: Router,
-              private ws: WebSocketService, private notificationService: NotificationService) {}
+    private ws: WebSocketService, private notificationService: NotificationService) { }
 
   updateModel(patch: Partial<{
     firstName: string;
@@ -138,8 +146,6 @@ export class RegisterComponent {
     const payload = { ...model, profilePicture: this.profilePicture() || undefined };
     // ensure birthDate is ISO string if set
     if (payload.birthDate) payload.birthDate = payload.birthDate;
-    console.log(payload.password);
-    console.log(payload.confirmPassword);
 
     this.auth.register(payload).subscribe({
       next: (res) => {

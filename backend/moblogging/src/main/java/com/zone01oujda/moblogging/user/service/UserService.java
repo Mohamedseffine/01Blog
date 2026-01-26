@@ -3,10 +3,16 @@ package com.zone01oujda.moblogging.user.service;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,6 +22,7 @@ import com.zone01oujda.moblogging.exception.ConflictException;
 import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
 import com.zone01oujda.moblogging.user.dto.UpdateUserDto;
 import com.zone01oujda.moblogging.user.dto.UserDto;
+import com.zone01oujda.moblogging.user.repository.FollowRepository;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
 import com.zone01oujda.moblogging.util.FileUploadUtil;
 import com.zone01oujda.moblogging.util.SecurityUtil;
@@ -24,14 +31,41 @@ import com.zone01oujda.moblogging.util.SecurityUtil;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final FollowRepository followRepository;
     private final FileUploadUtil fileUploadUtil;
     private final String uploadDir;
 
-    public UserService(UserRepository userRepository, FileUploadUtil fileUploadUtil,
+    public UserService(UserRepository userRepository, FollowRepository followRepository, FileUploadUtil fileUploadUtil,
             @Value("${files.uploadDirectory}") String uploadDir) {
         this.userRepository = userRepository;
+        this.followRepository = followRepository;
         this.fileUploadUtil = fileUploadUtil;
         this.uploadDir = uploadDir;
+    }
+
+    public Page<UserDto> getAllUsers(int page, int size, String search) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<User> allUsers = userRepository.findAll();
+        
+        List<User> filtered = allUsers.stream()
+                .filter(user -> {
+                    if (search == null || search.trim().isEmpty()) {
+                        return true;
+                    }
+                    String lowerSearch = search.toLowerCase().trim();
+                    return user.getUsername().toLowerCase().contains(lowerSearch) ||
+                           user.getEmail().toLowerCase().contains(lowerSearch) ||
+                           (user.getBio() != null && user.getBio().toLowerCase().contains(lowerSearch));
+                })
+                .collect(Collectors.toList());
+        
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        List<UserDto> pageContent = filtered.subList(start, end).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(pageContent, pageable, filtered.size());
     }
 
     public UserDto getUserById(Long userId) {
@@ -127,6 +161,14 @@ public class UserService {
     }
 
     private UserDto toDto(User user) {
+        return toDtoWithFollowStatus(user, getCurrentUserEntityOrNull());
+    }
+
+    private UserDto toDtoWithFollowStatus(User user, User currentUser) {
+        boolean isFollowing = false;
+        if (currentUser != null && !currentUser.getId().equals(user.getId())) {
+            isFollowing = followRepository.existsByFollowerIdAndFollowingId(currentUser.getId(), user.getId());
+        }
         return new UserDto(
                 user.getId(),
                 user.getUsername(),
@@ -135,7 +177,16 @@ public class UserService {
                 user.getProfilePictureUrl(),
                 user.getFollowerCount(),
                 user.getFollowingCount(),
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                isFollowing
         );
+    }
+
+    private User getCurrentUserEntityOrNull() {
+        try {
+            return getCurrentUserEntity();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

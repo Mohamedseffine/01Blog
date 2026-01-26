@@ -18,42 +18,44 @@ import { NotificationService } from '@domains/notification/services/notification
           <a class="navbar-brand fw-bold" routerLink="/">
             <i class="bi bi-pencil-square"></i> Moblogging
           </a>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-              <li class="nav-item" *ngIf="isAuthenticated$ | async">
-                <a class="nav-link" routerLink="/posts">Posts</a>
-              </li>
-              <li class="nav-item" *ngIf="isAuthenticated$ | async">
-                <a class="nav-link" routerLink="/notifications">Notifications</a>
-              </li>
-              <li class="nav-item" *ngIf="isAdmin$ | async">
-                <a class="nav-link" routerLink="/admin/dashboard">Admin</a>
-              </li>
-              <li class="nav-item" *ngIf="currentUser$ | async as currentUser">
-                <a class="nav-link d-flex align-items-center gap-2" [routerLink]="['/users/profile', currentUser.id]">
-                  <img
-                    [src]="profileImage$ | async"
-                    class="rounded-circle"
-                    width="28"
-                    height="28"
-                    alt="Profile"
-                  />
-                  <span>Profile</span>
-                </a>
-              </li>
-              <li class="nav-item" *ngIf="isAuthenticated$ | async">
-                <button class="btn btn-outline-light btn-sm ms-2" type="button" (click)="logout()">
-                  Logout
-                </button>
-              </li>
-              <li class="nav-item" *ngIf="!(isAuthenticated$ | async)">
-                <a class="nav-link" routerLink="/auth/login">Login</a>
-              </li>
-            </ul>
-          </div>
+          <ng-container *ngIf="isAuthenticated$ | async">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+              <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/posts">Posts</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/users/list">Users</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/notifications">Notifications</a>
+                </li>
+                <li class="nav-item" *ngIf="isAdmin$ | async">
+                  <a class="nav-link" routerLink="/admin/dashboard">Admin</a>
+                </li>
+                <li class="nav-item" *ngIf="currentUser$ | async as currentUser">
+                  <a class="nav-link d-flex align-items-center gap-2" [routerLink]="['/users/profile', currentUser.id]">
+                    <img
+                      [src]="profileImage$ | async"
+                      class="rounded-circle"
+                      width="28"
+                      height="28"
+                      alt="Profile"
+                    />
+                    <span>Profile</span>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <button class="btn btn-outline-light btn-sm ms-2" type="button" (click)="logout()">
+                    Logout
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </ng-container>
         </div>
       </nav>
 

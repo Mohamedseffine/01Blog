@@ -88,6 +88,10 @@ export class PostCreateComponent {
       this.error.set('Please add at least one subject.');
       return;
     }
+    if (this.mediaFiles().length> 10) {
+      this.error.set('Please add at most ten Files.');
+      return;
+    }
     this.loading.set(true);
     this.postService.createPost({
       postTitle: this.title().trim(),

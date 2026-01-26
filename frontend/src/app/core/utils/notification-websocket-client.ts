@@ -42,18 +42,19 @@ export class NotificationWebSocketClient {
           if (msg.body && onMessage) onMessage(JSON.parse(msg.body));
         });
       } catch (e) {
-        console.error('Subscribe error', e);
+        // Subscribe error caught - error handler will manage user notification
+        if (onError) onError(e);
       }
     };
 
     this.client.onStompError = (frame: Frame) => {
       this.connected = false;
-      console.error('STOMP error', frame);
+      // STOMP error - error handler will manage user notification
       if (onError) onError(frame.headers);
     };
 
     this.client.onWebSocketError = (evt: any) => {
-      console.error('WebSocket error', evt);
+      // WebSocket error - error handler will manage user notification
       this.connected = false;
       if (onError) onError(evt);
     };
@@ -86,7 +87,7 @@ export class NotificationWebSocketClient {
     try {
       this.client.publish({ destination, body: typeof body === 'string' ? body : JSON.stringify(body) });
     } catch (e) {
-      console.error('Publish error', e);
+      // Publish error - will be handled by error handler
     }
   }
 }

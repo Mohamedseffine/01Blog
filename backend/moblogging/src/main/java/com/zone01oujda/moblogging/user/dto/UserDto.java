@@ -18,4 +18,5 @@ public class UserDto {
     private int followersCount;
     private int followingCount;
     private LocalDateTime createdAt;
+    private boolean isFollowing;
 }

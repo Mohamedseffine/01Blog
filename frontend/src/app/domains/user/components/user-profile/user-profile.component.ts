@@ -7,6 +7,7 @@ import { UserService } from '../../services/user.service';
 import { AuthService } from '@core/services/auth.service';
 import { ReportService } from '@domains/report/services/report.service';
 import { ReportReason } from '@domains/report/models/report.model';
+import { ErrorService } from '@core/services/error.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -54,6 +55,15 @@ import { ReportReason } from '@domains/report/models/report.model';
                 >
                   Edit profile
                 </a>
+                <button
+                  class="btn btn-primary ms-2"
+                  (click)="toggleFollow(user.id)"
+                  *ngIf="canFollowUser(user.id)"
+                  [disabled]="followLoading()"
+                  type="button"
+                >
+                  {{ followLoading() ? 'Loading...' : (isFollowing() ? 'Unfollow' : 'Follow') }}
+                </button>
                 <button
                   class="btn btn-outline-danger ms-2"
                   *ngIf="canReportUser(user.id)"
@@ -110,6 +120,8 @@ export class UserProfileComponent {
   reportError = signal('');
   reportSuccess = signal('');
   reportLoading = signal(false);
+  isFollowing = signal(false);
+  followLoading = signal(false);
   reportReasons: ReportReason[] = [
     'SPAM',
     'HARASSMENT',
@@ -136,6 +148,12 @@ export class UserProfileComponent {
             this.error.set('Unable to load profile.');
           }
           return of(null);
+        }),
+        map((user) => {
+          if (user) {
+            this.isFollowing.set(user.isFollowing ?? false);
+          }
+          return user;
         })
       );
     })
@@ -154,7 +172,8 @@ export class UserProfileComponent {
     private userService: UserService,
     private authService: AuthService,
     private reportService: ReportService,
-    private router: Router
+    private router: Router,
+    private errorService: ErrorService
   ) {}
 
   private fallbackAvatar =
@@ -179,6 +198,52 @@ export class UserProfileComponent {
     if (!current) return false;
     const isAdmin = current.roles?.includes('ADMIN') || current.roles?.includes('ROLE_ADMIN');
     return !isAdmin && current.id !== userId;
+  }
+
+  canFollowUser(userId: number) {
+    const current = this.authService.getCurrentUserSnapshot();
+    if (!current) return false;
+    return current.id !== userId;
+  }
+
+  toggleFollow(userId: number) {
+    if (this.isFollowing()) {
+      this.unfollowUser(userId);
+    } else {
+      this.followUser(userId);
+    }
+  }
+
+  followUser(userId: number) {
+    this.followLoading.set(true);
+    this.userService.followUser(userId).subscribe({
+      next: () => {
+        this.followLoading.set(false);
+        this.isFollowing.set(true);
+        this.errorService.addWarning('User followed', 2000);
+      },
+      error: (err) => {
+        this.followLoading.set(false);
+        console.error('Failed to follow user:', err);
+        this.errorService.addWarning('Failed to follow user', 5000);
+      }
+    });
+  }
+
+  unfollowUser(userId: number) {
+    this.followLoading.set(true);
+    this.userService.unfollowUser(userId).subscribe({
+      next: () => {
+        this.followLoading.set(false);
+        this.isFollowing.set(false);
+        this.errorService.addWarning('User unfollowed', 2000);
+      },
+      error: (err) => {
+        this.followLoading.set(false);
+        console.error('Failed to unfollow user:', err);
+        this.errorService.addWarning('Failed to unfollow user', 5000);
+      }
+    });
   }
 
   toggleReport() {

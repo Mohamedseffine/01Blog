@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, map, tap } from 'rxjs';
+import { BehaviorSubject, Observable, map, tap, throwError } from 'rxjs';
 import { environment } from '@env/environment';
 import { CurrentUser } from '@domains/auth/models/auth.model';
 
@@ -103,10 +103,18 @@ export class AuthService {
       this.currentUserSubject.next(null);
       return;
     }
+
     this.refreshCurrentUser().subscribe({
-      error: () => this.currentUserSubject.next(null)
+      next: (user) => {
+        // Successfully loaded
+      },
+      error: (err) => {
+        // If getting current user fails, clear the token
+        this.clearToken();
+      }
     });
   }
+
 
   refreshCurrentUser(): Observable<CurrentUser> {
     return this.getCurrentUser().pipe(

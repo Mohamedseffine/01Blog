@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, map, of, throwError } from 'rxjs';
 
 import { environment } from '@env/environment';
 import { Post, CreatePostDto, UpdatePostDto, PostListResponse } from '../models/post.model';
+import { ErrorService } from '@core/services/error.service';
 
 /**
  * Post Domain Service
@@ -15,7 +16,27 @@ import { Post, CreatePostDto, UpdatePostDto, PostListResponse } from '../models/
 export class PostService {
   private apiUrl = `${environment.apiUrl}/posts`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private errorService: ErrorService) { }
+
+  private emptyList(page: number, size: number): PostListResponse {
+    return {
+      content: [],
+      number: page,
+      size,
+      totalPages: 0,
+      totalElements: 0
+    };
+  }
+
+  private handleError<T>(message: string, fallback?: T) {
+    return (error: any) => {
+      this.errorService.addError(message);
+      if (fallback !== undefined) {
+        return of(fallback as T);
+      }
+      return throwError(() => error);
+    };
+  }
 
   /**
    * Get all posts with pagination
@@ -25,7 +46,8 @@ export class PostService {
       .set('page', page.toString())
       .set('size', size.toString());
     return this.http.get<any>(this.apiUrl, { params }).pipe(
-      map((res) => res?.data ?? res)
+      map((res) => res?.data ?? res),
+      catchError(this.handleError<PostListResponse>('Unable to load posts.', this.emptyList(page, size)))
     );
   }
 
@@ -34,7 +56,8 @@ export class PostService {
    */
   getPostById(id: number): Observable<Post> {
     return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
-      map((res) => res?.data ?? res)
+      map((res) => res?.data ?? res),
+      catchError(this.handleError<Post>('Unable to load post.'))
     );
   }
 
@@ -48,10 +71,12 @@ export class PostService {
     dto.postSubject.forEach(subject => formData.append('postSubject', subject));
     formData.append('postVisibility', dto.postVisibility);
     if (dto.multipartFiles) {
+      
       dto.multipartFiles.forEach(file => formData.append('multipartFiles', file));
     }
     return this.http.post<any>(`${this.apiUrl}/create`, formData).pipe(
-      map((res) => res?.data ?? res)
+      map((res) => res?.data ?? res),
+      catchError(this.handleError<Post>('Unable to create post.'))
     );
   }
 
@@ -60,7 +85,8 @@ export class PostService {
    */
   updatePost(id: number, dto: UpdatePostDto): Observable<Post> {
     return this.http.put<any>(`${this.apiUrl}/${id}`, dto).pipe(
-      map((res) => res?.data ?? res)
+      map((res) => res?.data ?? res),
+      catchError(this.handleError<Post>('Unable to update post.'))
     );
   }
 
@@ -68,7 +94,9 @@ export class PostService {
    * Delete a post
    */
   deletePost(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+      catchError(this.handleError<void>('Unable to delete post.'))
+    );
   }
 
   /**
@@ -79,7 +107,8 @@ export class PostService {
       .set('page', page.toString())
       .set('size', size.toString());
     return this.http.get<any>(`${this.apiUrl}/user/${userId}`, { params }).pipe(
-      map((res) => res?.data ?? res)
+      map((res) => res?.data ?? res),
+      catchError(this.handleError<PostListResponse>('Unable to load user posts.', this.emptyList(page, size)))
     );
   }
 
@@ -91,7 +120,8 @@ export class PostService {
       map((res) => ({
         url: URL.createObjectURL(res.body as Blob),
         type: res.headers.get('Content-Type') || 'application/octet-stream'
-      }))
+      })),
+      catchError(this.handleError<{ url: string; type: string }>('Unable to load post media.'))
     );
   }
 }

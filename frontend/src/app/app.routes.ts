@@ -4,14 +4,18 @@ import { authGuard } from './domains/auth/guards/auth.guard';
 
 export const routes: Routes = [
   {
+    path: 'auth',
+    loadChildren: () => import('./domains/auth/auth.routes').then(m => m.AUTH_ROUTES)
+  },
+  {
+    path: 'error',
+    loadComponent: () => import('./core/components/error-page/error-page.component').then(m => m.ErrorPageComponent)
+  },
+  {
     path: '',
     loadComponent: () => import('./layouts/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
     canActivateChild: [authGuard],
     children: [
-      {
-        path: 'auth',
-        loadChildren: () => import('./domains/auth/auth.routes').then(m => m.AUTH_ROUTES)
-      },
       {
         path: 'posts',
         loadChildren: () => import('./domains/post/post.routes').then(m => m.POST_ROUTES)

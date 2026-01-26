@@ -110,6 +110,7 @@ export class PostEditComponent {
       this.error.set('Please add at least one subject.');
       return;
     }
+
     this.loading.set(true);
     this.postService.updatePost(id, {
       postTitle: this.title().trim(),

@@ -3,7 +3,17 @@ package com.zone01oujda.moblogging.entity;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import jakarta.persistence.*;
+import com.zone01oujda.moblogging.entity.CommentReact;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name="comments")
@@ -37,6 +47,9 @@ public class Comment {
     
     @OneToMany(mappedBy="parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> children;
+
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommentReact> reacts;
 
     protected Comment() {
         this.createdAt = LocalDateTime.now();
@@ -130,5 +143,13 @@ public class Comment {
 
     public void setChildren(List<Comment> children) {
         this.children = children;
+    }
+
+    public List<CommentReact> getReacts() {
+        return reacts;
+    }
+
+    public void setReacts(List<CommentReact> reacts) {
+        this.reacts = reacts;
     }
 }
