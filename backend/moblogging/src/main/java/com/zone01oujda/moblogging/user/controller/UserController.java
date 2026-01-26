@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,6 +18,7 @@ import java.nio.file.Path;
 import com.zone01oujda.moblogging.user.dto.UserDto;
 import com.zone01oujda.moblogging.user.dto.UpdateUserDto;
 import com.zone01oujda.moblogging.user.service.UserService;
+import com.zone01oujda.moblogging.user.service.FollowService;
 import com.zone01oujda.moblogging.util.response.ApiResponse;
 
 import jakarta.validation.Valid;
@@ -26,9 +28,11 @@ import jakarta.validation.Valid;
 public class UserController {
 
     private final UserService userService;
+    private final FollowService followService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, FollowService followService) {
         this.userService = userService;
+        this.followService = followService;
     }
 
     @GetMapping
@@ -98,6 +102,18 @@ public class UserController {
         return ResponseEntity.ok(
             new ApiResponse<>(true, "User deleted successfully")
         );
+    }
+
+    @PostMapping("/{userId}/follow")
+    public ResponseEntity<ApiResponse<Void>> followUser(@PathVariable("userId") Long userId) {
+        followService.followUser(userId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "User followed successfully"));
+    }
+
+    @DeleteMapping("/{userId}/follow")
+    public ResponseEntity<ApiResponse<Void>> unfollowUser(@PathVariable("userId") Long userId) {
+        followService.unfollowUser(userId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "User unfollowed successfully"));
     }
 
     @GetMapping("/{userId}/followers")

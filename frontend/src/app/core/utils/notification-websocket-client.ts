@@ -13,32 +13,32 @@ export class NotificationWebSocketClient {
   private client: Client | null = null;
   private connected = false;
 
-  constructor(private url: string) {}
+  constructor(private url: string) { }
 
-  connect(token?: string, onMessage?: NotificationHandler, onError?: (err: any) => void) {
+  connect(
+    token?: string,
+    onMessage?: NotificationHandler,
+    onError?: (err: any) => void,
+    onConnect?: () => void
+  ) {
     if (this.connected) return;
 
     this.client = new Client({
-      // use SockJS as the underlying transport
-      webSocketFactory: () => new SockJS(this.url) as any,
+      webSocketFactory: () =>
+        new SockJS(token ? `${this.url}?token=${encodeURIComponent(token)}` : this.url) as any,
       reconnectDelay: 5000,
-      debug: (str: string) => { console.debug('[STOMP]', str); },
+      debug: (str: string) => console.debug('[STOMP]', str),
     });
-
-    if (token) {
-      this.client.connectHeaders = { Authorization: `Bearer ${token}` } as any;
-    }
 
     this.client.onConnect = (frame: Frame) => {
       this.connected = true;
       console.info('STOMP connected', frame && frame.headers);
-      // subscribe to personal queue
+      if (onConnect) {
+        onConnect();
+      }
+      // subscribe to personal queue only (user-specific notifications)
       try {
         this.client?.subscribe('/user/queue/notifications', (msg: IMessage) => {
-          if (msg.body && onMessage) onMessage(JSON.parse(msg.body));
-        });
-
-        this.client?.subscribe('/topic/notifications', (msg: IMessage) => {
           if (msg.body && onMessage) onMessage(JSON.parse(msg.body));
         });
       } catch (e) {

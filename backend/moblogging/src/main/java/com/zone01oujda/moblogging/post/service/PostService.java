@@ -20,7 +20,11 @@ import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
 import com.zone01oujda.moblogging.post.dto.CreatePostDto;
 import com.zone01oujda.moblogging.post.dto.PostDto;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
+import com.zone01oujda.moblogging.notification.enums.NotificationType;
+import com.zone01oujda.moblogging.notification.service.NotificationService;
+import com.zone01oujda.moblogging.entity.Follow;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
+import com.zone01oujda.moblogging.user.repository.FollowRepository;
 import com.zone01oujda.moblogging.util.FileUploadUtil;
 import com.zone01oujda.moblogging.util.SecurityUtil;
 import java.net.MalformedURLException;
@@ -36,13 +40,19 @@ public class PostService {
     private final FileUploadUtil fileUploadUtil;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final FollowRepository followRepository;
+    private final NotificationService notificationService;
     private final String uploadDir;
 
     public PostService(PostRepository postRepository, UserRepository userRepository, FileUploadUtil fileUploadUtil,
+            FollowRepository followRepository,
+            NotificationService notificationService,
             @Value("${files.uploadDirectory}") String uploadDir) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.fileUploadUtil = fileUploadUtil;
+        this.followRepository = followRepository;
+        this.notificationService = notificationService;
         this.uploadDir = uploadDir;
     }
 
@@ -81,6 +91,18 @@ public class PostService {
         post.setCreator(user);
         post.setMediaUrl(mediaUrls);
         post = postRepository.save(post);
+
+        List<Follow> followers = followRepository.findByFollowingId(user.getId());
+        for (Follow follow : followers) {
+            User receiver = follow.getFollower();
+            if (receiver != null && !receiver.getId().equals(user.getId())) {
+                notificationService.createNotification(
+                    receiver,
+                    NotificationType.POST,
+                    user.getUsername() + " created a new post: " + post.getTitle()
+                );
+            }
+        }
 
         // Convert to DTO and return
         return convertToDto(post);

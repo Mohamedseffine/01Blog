@@ -4,9 +4,9 @@
 export interface Notification {
   id: number;
   message: string;
-  type: NotificationType;
+  type: NotificationType | string;
   isRead: boolean;
-  createdAt: Date;
+  createdAt: string;
   contentId?: number;
   actor?: {
     id: number;
@@ -15,20 +15,21 @@ export interface Notification {
 }
 
 export enum NotificationType {
+  REACT = 'REACT',
   COMMENT = 'COMMENT',
-  REACTION = 'REACTION',
   FOLLOW = 'FOLLOW',
   MENTION = 'MENTION',
+  POST = 'POST',
+  POST_APPROVED = 'POST_APPROVED',
+  POST_REJECTED = 'POST_REJECTED',
+  REPORT = 'REPORT',
   SYSTEM = 'SYSTEM'
 }
 
 export interface NotificationResponse {
   content: Notification[];
-  pageable: {
-    pageNumber: number;
-    pageSize: number;
-    totalPages: number;
-    totalElements: number;
-  };
-  unreadCount: number;
+  number: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
 }

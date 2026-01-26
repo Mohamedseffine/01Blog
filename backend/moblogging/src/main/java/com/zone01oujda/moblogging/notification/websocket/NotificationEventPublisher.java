@@ -2,6 +2,7 @@ package com.zone01oujda.moblogging.notification.websocket;
 
 import org.springframework.stereotype.Service;
 
+import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.notification.dto.NotificationDto;
 
 /**
@@ -22,10 +23,11 @@ public class NotificationEventPublisher {
      * @param userId the recipient user ID
      * @param notification the notification to send
      */
-    public void publishToUser(Long userId, NotificationDto notification) {
-        if (socketHandler.isUserConnected(userId)) {
-            socketHandler.sendNotificationToUser(userId, notification);
+    public void publishToUser(User receiver, NotificationDto notification) {
+        if (receiver == null) {
+            return;
         }
+        socketHandler.sendNotificationToUser(receiver.getUsername(), notification);
     }
 
     /**
@@ -41,9 +43,9 @@ public class NotificationEventPublisher {
      * @param userIds array of recipient user IDs
      * @param notification the notification to send
      */
-    public void publishToUsers(Long[] userIds, NotificationDto notification) {
-        for (Long userId : userIds) {
-            publishToUser(userId, notification);
+    public void publishToUsers(java.util.List<User> users, NotificationDto notification) {
+        for (User user : users) {
+            publishToUser(user, notification);
         }
     }
 

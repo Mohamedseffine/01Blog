@@ -13,16 +13,18 @@ export class WebSocketService {
   constructor() {}
 
   connect(token?: string, onMessage?: (data: any) => void) {
-    if (!this.client) {
-      this.client = new NotificationWebSocketClient(environment.wsUrl);
-    }
-    this.client.connect(token, (data) => {
-      this.connectedSubject.next(true);
-      if (onMessage) onMessage(data);
-    }, () => {
-      this.connectedSubject.next(false);
-    });
+  if (!this.client) {
+    this.client = new NotificationWebSocketClient(environment.wsUrl);
   }
+
+  this.client.connect(
+    token,
+    (data) => { if (onMessage) onMessage(data); },
+    () => { this.connectedSubject.next(false); },
+    () => { this.connectedSubject.next(true); }  
+  );
+}
+
 
   // notify server that user has connected (server expects /app/users/connect)
   sendUserConnect(userId: number | string) {

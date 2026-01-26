@@ -31,9 +31,9 @@ public class NotificationSocketHandler {
      * @param userId the recipient user ID
      * @param notification the notification to send
      */
-    public void sendNotificationToUser(Long userId, NotificationDto notification) {
+    public void sendNotificationToUser(String username, NotificationDto notification) {
         messagingTemplate.convertAndSendToUser(
-            userId.toString(),
+            username,
             "/queue/notifications",
             notification
         );

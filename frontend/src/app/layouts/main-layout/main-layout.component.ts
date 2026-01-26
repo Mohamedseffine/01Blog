@@ -5,6 +5,7 @@ import { catchError, map, of, switchMap } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { Router } from '@angular/router';
 import { UserService } from '@domains/user/services/user.service';
+import { NotificationService } from '@domains/notification/services/notification.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -22,8 +23,12 @@ import { UserService } from '@domains/user/services/user.service';
           </button>
           <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-              <li class="nav-item"><a class="nav-link" routerLink="/posts">Posts</a></li>
-              <li class="nav-item"><a class="nav-link" routerLink="/notifications">Notifications</a></li>
+              <li class="nav-item" *ngIf="isAuthenticated$ | async">
+                <a class="nav-link" routerLink="/posts">Posts</a>
+              </li>
+              <li class="nav-item" *ngIf="isAuthenticated$ | async">
+                <a class="nav-link" routerLink="/notifications">Notifications</a>
+              </li>
               <li class="nav-item" *ngIf="isAdmin$ | async">
                 <a class="nav-link" routerLink="/admin/dashboard">Admin</a>
               </li>
@@ -86,7 +91,8 @@ export class MainLayoutComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private userService: UserService,
-    private router: Router
+    private router: Router,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -97,6 +103,10 @@ export class MainLayoutComponent implements OnInit {
         }
       });
     }
+
+    this.authService.currentUser$.subscribe((user) => {
+      this.notificationService.startRealtime(user);
+    });
   }
 
   private fallbackAvatar =
@@ -105,11 +115,13 @@ export class MainLayoutComponent implements OnInit {
   logout() {
     this.authService.logout().subscribe({
       next: () => {
+        this.notificationService.stopRealtime();
         this.router.navigate(['/auth/login']);
       },
       error: () => {
         // still clear local state even if backend fails
         this.authService.clearToken();
+        this.notificationService.stopRealtime();
         this.router.navigate(['/auth/login']);
       }
     });

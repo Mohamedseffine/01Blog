@@ -1,5 +1,6 @@
 package com.zone01oujda.moblogging.user.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,4 +18,6 @@ public interface  UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     long countByBannedTrue();
     long countByRole(Role role);
+    
+    List<User> findByRole(Role role);
 }

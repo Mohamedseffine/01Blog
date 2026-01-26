@@ -1,5 +1,6 @@
 package com.zone01oujda.moblogging.notification.controller;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.zone01oujda.moblogging.notification.dto.NotificationDto;
+import com.zone01oujda.moblogging.notification.service.NotificationService;
 import com.zone01oujda.moblogging.notification.websocket.NotificationEventPublisher;
 import com.zone01oujda.moblogging.util.response.ApiResponse;
 
@@ -21,9 +24,11 @@ import com.zone01oujda.moblogging.util.response.ApiResponse;
 public class NotificationController {
 
     private final NotificationEventPublisher eventPublisher;
+    private final NotificationService notificationService;
 
-    public NotificationController(NotificationEventPublisher eventPublisher) {
+    public NotificationController(NotificationEventPublisher eventPublisher, NotificationService notificationService) {
         this.eventPublisher = eventPublisher;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -33,11 +38,12 @@ public class NotificationController {
      * @return list of notifications
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<Object>> getNotifications(
+    public ResponseEntity<ApiResponse<Page<NotificationDto>>> getNotifications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        Page<NotificationDto> notifications = notificationService.getNotifications(page, size);
         return ResponseEntity.ok(
-            new ApiResponse<>(true, "Notifications retrieved successfully", null)
+            new ApiResponse<>(true, "Notifications retrieved successfully", notifications)
         );
     }
 
@@ -46,9 +52,9 @@ public class NotificationController {
      * @return list of unread notifications
      */
     @GetMapping("/unread")
-    public ResponseEntity<ApiResponse<Object>> getUnreadNotifications() {
+    public ResponseEntity<ApiResponse<java.util.List<NotificationDto>>> getUnreadNotifications() {
         return ResponseEntity.ok(
-            new ApiResponse<>(true, "Unread notifications retrieved successfully", null)
+            new ApiResponse<>(true, "Unread notifications retrieved successfully", notificationService.getUnreadNotifications())
         );
     }
 
@@ -59,8 +65,22 @@ public class NotificationController {
      */
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable("notificationId") Long notificationId) {
+        notificationService.markAsRead(notificationId);
         return ResponseEntity.ok(
             new ApiResponse<>(true, "Notification marked as read")
+        );
+    }
+
+    /**
+     * Mark a notification as unread
+     * @param notificationId the notification ID
+     * @return success response
+     */
+    @PutMapping("/{notificationId}/unread")
+    public ResponseEntity<ApiResponse<Void>> markAsUnread(@PathVariable("notificationId") Long notificationId) {
+        notificationService.markAsUnread(notificationId);
+        return ResponseEntity.ok(
+            new ApiResponse<>(true, "Notification marked as unread")
         );
     }
 
@@ -71,6 +91,7 @@ public class NotificationController {
      */
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable("notificationId") Long notificationId) {
+        notificationService.deleteNotification(notificationId);
         return ResponseEntity.ok(
             new ApiResponse<>(true, "Notification deleted successfully")
         );
@@ -82,6 +103,7 @@ public class NotificationController {
      */
     @PutMapping("/read-all")
     public ResponseEntity<ApiResponse<Void>> markAllAsRead() {
+        notificationService.markAllAsRead();
         return ResponseEntity.ok(
             new ApiResponse<>(true, "All notifications marked as read")
         );

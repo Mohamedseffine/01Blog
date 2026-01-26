@@ -18,6 +18,8 @@ import com.zone01oujda.moblogging.exception.AccessDeniedException;
 import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
+import com.zone01oujda.moblogging.notification.enums.NotificationType;
+import com.zone01oujda.moblogging.notification.service.NotificationService;
 import com.zone01oujda.moblogging.util.SecurityUtil;
 
 /**
@@ -29,12 +31,14 @@ public class CommentService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    private final NotificationService notificationService;
 
     public CommentService(UserRepository userRepository, PostRepository postRepository,
-            CommentRepository commentRepository) {
+            CommentRepository commentRepository, NotificationService notificationService) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -70,6 +74,15 @@ public class CommentService {
         comment.setCreator(user);
         comment.setPost(post);
         comment = commentRepository.save(comment);
+
+        User postOwner = post.getCreator();
+        if (postOwner != null && !postOwner.getId().equals(user.getId())) {
+            notificationService.createNotification(
+                postOwner,
+                NotificationType.COMMENT,
+                user.getUsername() + " commented on your post"
+            );
+        }
 
         return convertToDto(comment);
     }
