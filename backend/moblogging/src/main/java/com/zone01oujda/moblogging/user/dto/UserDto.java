@@ -2,6 +2,7 @@ package com.zone01oujda.moblogging.user.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,5 +19,6 @@ public class UserDto {
     private int followersCount;
     private int followingCount;
     private LocalDateTime createdAt;
+    @JsonProperty("isFollowing")
     private boolean isFollowing;
 }

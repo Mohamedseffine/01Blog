@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PostService } from '../../services/post.service';
 import { PostVisibility } from '../../models/post.model';
+import { ErrorService } from '@core/services/error.service';
 
 @Component({
   selector: 'app-post-create',
@@ -69,7 +70,11 @@ export class PostCreateComponent {
   loading = signal(false);
   error = signal('');
 
-  constructor(private postService: PostService, private router: Router) {}
+  constructor(
+    private postService: PostService,
+    private router: Router,
+    private errorService: ErrorService
+  ) {}
 
   onFilesChange(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -100,7 +105,10 @@ export class PostCreateComponent {
       postVisibility: this.visibility(),
       multipartFiles: this.mediaFiles()
     }).subscribe({
-      next: () => this.router.navigate(['/posts/list']),
+      next: () => {
+        this.errorService.addSuccess('Post created successfully.');
+        this.router.navigate(['/posts/list']);
+      },
       error: () => {
         this.loading.set(false);
         this.error.set('Unable to create post.');

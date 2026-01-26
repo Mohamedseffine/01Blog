@@ -220,11 +220,9 @@ export class UserProfileComponent {
       next: () => {
         this.followLoading.set(false);
         this.isFollowing.set(true);
-        this.errorService.addWarning('User followed', 2000);
       },
       error: (err) => {
         this.followLoading.set(false);
-        console.error('Failed to follow user:', err);
         this.errorService.addWarning('Failed to follow user', 5000);
       }
     });
@@ -236,11 +234,9 @@ export class UserProfileComponent {
       next: () => {
         this.followLoading.set(false);
         this.isFollowing.set(false);
-        this.errorService.addWarning('User unfollowed', 2000);
       },
       error: (err) => {
         this.followLoading.set(false);
-        console.error('Failed to unfollow user:', err);
         this.errorService.addWarning('Failed to unfollow user', 5000);
       }
     });
@@ -267,6 +263,7 @@ export class UserProfileComponent {
         this.reportSuccess.set('Report submitted.');
         this.reportDescription.set('');
         this.reportOpen.set(false);
+        this.errorService.addSuccess('Report submitted successfully.');
       },
       error: () => {
         this.reportLoading.set(false);

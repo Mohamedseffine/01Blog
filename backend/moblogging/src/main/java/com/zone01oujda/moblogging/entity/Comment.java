@@ -51,6 +51,9 @@ public class Comment {
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentReact> reacts;
 
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Report> reports;
+
     protected Comment() {
         this.createdAt = LocalDateTime.now();
         this.hidden = false;
@@ -151,5 +154,13 @@ public class Comment {
 
     public void setReacts(List<CommentReact> reacts) {
         this.reacts = reacts;
+    }
+
+    public List<Report> getReports() {
+        return reports;
+    }
+
+    public void setReports(List<Report> reports) {
+        this.reports = reports;
     }
 }

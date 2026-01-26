@@ -13,49 +13,21 @@ export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
   const router = inject(Router);
   const auth = inject(AuthService);
   const errorService = inject(ErrorService);
-
+  
   const isAuthRequest = req.url.includes('/auth/login')
     || req.url.includes('/auth/register')
     || req.url.includes('/auth/refresh')
     || req.url.includes('/auth/logout');
   const isAuthMe = req.url.includes('/auth/me');
-  const isErrorPage = req.url.includes('/error');
-
-  const redirectToError = (status: number, message?: string) => {
-    const safeStatus = status || 500;
-    const fallback =
-      message ||
-      (status === 401 ? 'Authentication required.'
-        : status === 403 ? 'You do not have permission to perform this action.'
-        : status === 404 ? 'Resource not found.'
-        : status === 409 ? 'Conflict detected.'
-        : status === 422 ? 'Validation failed.'
-        : status === 0 ? 'Unable to connect to server.'
-        : 'An unexpected error occurred.');
-    router.navigate(['/error'], { queryParams: { status: safeStatus, message: fallback } });
-  };
 
   return next(req).pipe(
     catchError((error: any) => {
-      if (isErrorPage) {
-        return throwError(() => error);
-      }
-
-      const status = error?.status;
-      const serverMessage = error?.error?.message || error?.message;
-
-      // Do not redirect on Bad Request
-      if (status === 400) {
-        const message = serverMessage || 'Please check your input and try again.';
-        errorService.addError(message);
-        return throwError(() => error);
-      }
-
       // If /auth/me fails, try one refresh before treating it as logout
-      if ((status === 401 || status === 403) && isAuthMe) {
+      if ((error.status === 401 || error.status === 403) && isAuthMe) {
         if (req.headers.has('X-Retry-Me')) {
           auth.clearToken();
-          redirectToError(status, 'Your session has expired. Please log in again.');
+          router.navigate(['/auth/login']);
+          errorService.addError('Your session has expired. Please log in again.');
           return throwError(() => error);
         }
 
@@ -74,32 +46,36 @@ export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
               return next(cloned);
             }
             auth.clearToken();
-            redirectToError(status, 'Your session has expired. Please log in again.');
+            router.navigate(['/auth/login']);
+            errorService.addError('Your session has expired. Please log in again.');
             return throwError(() => error);
           }),
           catchError((refreshError) => {
             auth.clearToken();
-            redirectToError(status, 'Authentication failed. Please log in again.');
+            router.navigate(['/auth/login']);
+            errorService.addError('Authentication failed. Please log in again.');
             return throwError(() => refreshError);
           })
         );
       }
 
       // Handle 401 Unauthorized - Try to refresh token (but not for auth requests to prevent infinite loop)
-      if (status === 401 && !isAuthRequest) {
+      if (error.status === 401 && !isAuthRequest) {
         const currentToken = auth.getToken();
-
+        
         // If there's no token, don't try to refresh - just logout
         if (!currentToken) {
           auth.logout().subscribe({ error: () => undefined });
-          redirectToError(status, 'Please log in to continue.');
+          router.navigate(['/auth/login']);
+          errorService.addError('Please log in to continue.');
           return throwError(() => error);
         }
-
+        
         // Check if we already tried to refresh to prevent infinite loop
         if (req.headers.has('X-Retry-Refresh')) {
           auth.clearToken();
-          redirectToError(status, 'Your session has expired. Please log in again.');
+          router.navigate(['/auth/login']);
+          errorService.addError('Your session has expired. Please log in again.');
           return throwError(() => error);
         }
 
@@ -115,20 +91,69 @@ export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
             }
             // Refresh didn't return token - clear auth and redirect
             auth.clearToken();
-            redirectToError(status, 'Your session has expired. Please log in again.');
+            router.navigate(['/auth/login']);
+            errorService.addError('Your session has expired. Please log in again.');
             return throwError(() => error);
           }),
           catchError((refreshError) => {
             // If refresh fails, clear auth and redirect
             auth.clearToken();
-            redirectToError(status, 'Authentication failed. Please log in again.');
+            router.navigate(['/auth/login']);
+            errorService.addError('Authentication failed. Please log in again.');
             return throwError(() => refreshError);
           })
         );
       }
-
-      // All other errors redirect to error page with status and message
-      redirectToError(status, serverMessage);
+      
+      // Handle 403 Forbidden - especially on /auth/me, treat as 401
+      if (error.status === 403) {
+        errorService.addError('You do not have permission to perform this action.');
+        router.navigate(['/']);
+        return throwError(() => error);
+      }
+      
+      // Handle 404 Not Found
+      if (error.status === 404) {
+        if (req.url.includes('/posts/') || req.url.includes('/comments')) {
+          router.navigate(['/not-found']);
+          return throwError(() => error);
+        }
+        errorService.addError('Resource not found.');
+        return throwError(() => error);
+      }
+      
+      // Handle 409 Conflict
+      if (error.status === 409) {
+        const message = error.error?.message || 'This action conflicts with existing data.';
+        errorService.addError(message);
+        return throwError(() => error);
+      }
+      
+      // Handle 422 Unprocessable Entity (Validation errors)
+      if (error.status === 422) {
+        const message = error.error?.message || 'Please check your input and try again.';
+        errorService.addError(message);
+        return throwError(() => error);
+      }
+      
+      // Handle 500 Server Error
+      if (error.status >= 500) {
+        errorService.addError('Server error. Please try again later.');
+        return throwError(() => error);
+      }
+      
+      // Handle network errors (status 0)
+      if (error.status === 0) {
+        errorService.addError('Unable to connect to server. Please check your internet connection.');
+        return throwError(() => error);
+      }
+      
+      // Handle other errors with generic message
+      const errorMessage = error.error?.message || 'An unexpected error occurred. Please try again.';
+      if (error.status >= 400 && error.status < 500) {
+        errorService.addError(errorMessage);
+      }
+      
       return throwError(() => error);
     })
   );

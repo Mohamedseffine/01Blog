@@ -58,6 +58,9 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SavedPost> savedPosts;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Report> reports;
+
     protected  Post() {
         createdAt = LocalDateTime.now();
         hidden = false;
@@ -158,5 +161,13 @@ public class Post {
 
     public void setSavedPosts(List<SavedPost> savedPosts) {
         this.savedPosts = savedPosts;
+    }
+
+    public List<Report> getReports() {
+        return reports;
+    }
+
+    public void setReports(List<Report> reports) {
+        this.reports = reports;
     }
 }

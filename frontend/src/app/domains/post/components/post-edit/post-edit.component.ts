@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PostService } from '../../services/post.service';
 import { PostVisibility } from '../../models/post.model';
 import { catchError, map, of, switchMap } from 'rxjs';
+import { ErrorService } from '@core/services/error.service';
 
 @Component({
   selector: 'app-post-edit',
@@ -70,7 +71,12 @@ export class PostEditComponent {
   loaded = signal(false);
   postId = signal<number | null>(null);
 
-  constructor(private route: ActivatedRoute, private postService: PostService, private router: Router) {
+  constructor(
+    private route: ActivatedRoute,
+    private postService: PostService,
+    private router: Router,
+    private errorService: ErrorService
+  ) {
     this.route.paramMap.pipe(
       map(params => Number(params.get('id'))),
       switchMap(id => {
@@ -118,7 +124,10 @@ export class PostEditComponent {
       postSubject: subjects,
       postVisibility: this.visibility()
     }).subscribe({
-      next: () => this.router.navigate(['/posts', id]),
+      next: () => {
+        this.errorService.addSuccess('Post updated successfully.');
+        this.router.navigate(['/posts', id]);
+      },
       error: () => {
         this.loading.set(false);
         this.error.set('Unable to update post.');

@@ -337,6 +337,7 @@ export class PostDetailComponent {
         this.commentLoading.set(false);
         this.comments.set([comment, ...this.comments()]);
         this.loadCommentReact(comment.id);
+        this.errorService.addSuccess('Comment posted successfully.');
       },
       error: () => {
         this.commentLoading.set(false);
@@ -437,6 +438,7 @@ export class PostDetailComponent {
         this.reportLoading.set(false);
         this.reportSuccess.set('Report submitted.');
         this.reportDescription.set('');
+        this.errorService.addSuccess('Report submitted successfully.');
       },
       error: () => {
         this.reportLoading.set(false);
@@ -466,6 +468,7 @@ export class PostDetailComponent {
         this.reportSuccess.set('Report submitted.');
         this.reportingCommentId.set(null);
         this.reportDescription.set('');
+        this.errorService.addSuccess('Report submitted successfully.');
       },
       error: () => {
         this.reportLoading.set(false);
