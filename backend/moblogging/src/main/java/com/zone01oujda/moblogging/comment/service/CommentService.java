@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.zone01oujda.moblogging.comment.dto.CommentDto;
 import com.zone01oujda.moblogging.comment.dto.CreateCommentDto;
@@ -21,6 +22,7 @@ import com.zone01oujda.moblogging.user.repository.UserRepository;
 import com.zone01oujda.moblogging.notification.enums.NotificationType;
 import com.zone01oujda.moblogging.notification.service.NotificationService;
 import com.zone01oujda.moblogging.util.SecurityUtil;
+import com.zone01oujda.moblogging.report.repository.ReportRepository;
 
 /**
  * Service class for comment operations
@@ -32,13 +34,15 @@ public class CommentService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final NotificationService notificationService;
+    private final ReportRepository reportRepository;
 
     public CommentService(UserRepository userRepository, PostRepository postRepository,
-            CommentRepository commentRepository, NotificationService notificationService) {
+            CommentRepository commentRepository, NotificationService notificationService, ReportRepository reportRepository) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.notificationService = notificationService;
+        this.reportRepository = reportRepository;
     }
 
     /**
@@ -115,8 +119,7 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
-        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
-        if (!isAdmin && (comment.getCreator() == null || !username.equals(comment.getCreator().getUsername()))) {
+        if (comment.getCreator() == null || !username.equals(comment.getCreator().getUsername())) {
             throw new AccessDeniedException("You cannot update this comment");
         }
 
@@ -127,6 +130,7 @@ public class CommentService {
         return convertToDto(saved);
     }
 
+    @Transactional
     public void deleteComment(Long commentId) {
         String username = SecurityUtil.getCurrentUsername();
         if (username == null) {
@@ -141,6 +145,7 @@ public class CommentService {
             throw new AccessDeniedException("You cannot delete this comment");
         }
 
+        reportRepository.deleteByCommentId(commentId);
         commentRepository.delete(comment);
     }
 

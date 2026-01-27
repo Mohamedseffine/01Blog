@@ -6,11 +6,12 @@ import { PostService } from '../../services/post.service';
 import { PostVisibility } from '../../models/post.model';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { ErrorService } from '@core/services/error.service';
+import { DebounceClickDirective } from '@shared/directives/debounce-click.directive';
 
 @Component({
   selector: 'app-post-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DebounceClickDirective],
   template: `
     <div class="container py-4">
       <ng-container *ngIf="loaded()">
@@ -46,7 +47,7 @@ import { ErrorService } from '@core/services/error.service';
 
                   <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
 
-                  <button class="btn btn-primary" [disabled]="loading()">
+                  <button class="btn btn-primary" [disabled]="loading()" appDebounceClick>
                     {{ loading() ? 'Saving...' : 'Save Changes' }}
                   </button>
                 </form>
@@ -125,7 +126,7 @@ export class PostEditComponent {
       postVisibility: this.visibility()
     }).subscribe({
       next: () => {
-        this.errorService.addSuccess('Post updated successfully.');
+        // this.errorService.addSuccess('Post updated successfully.');
         this.router.navigate(['/posts', id]);
       },
       error: () => {

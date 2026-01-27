@@ -38,7 +38,7 @@ import { ErrorService, AppError } from '@core/services/error.service';
   styles: [`
     .error-container {
       position: fixed;
-      top: 20px;
+      top: 96px;
       right: 20px;
       z-index: 9999;
       max-width: 400px;

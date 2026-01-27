@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.zone01oujda.moblogging.comment.repository.CommentRepository;
 import com.zone01oujda.moblogging.entity.Comment;
@@ -87,12 +88,14 @@ public class ReportService {
         notifyAdminsAboutReport(report, reporter);
     }
 
+    @Transactional
     public void resolveReport(Long reportId) {
         Report report = reportRepository.findById(reportId)
             .orElseThrow(() -> new ResourceNotFoundException("Report not found"));
         report.setStatus(ReportStatus.RESOLVED);
         report.setResolvedAt(LocalDateTime.now());
-        reportRepository.save(report);
+        // Immediately remove resolved reports to keep the queue clean
+        reportRepository.delete(report);
     }
     
     private void notifyAdminsAboutReport(Report report, User reporter) {

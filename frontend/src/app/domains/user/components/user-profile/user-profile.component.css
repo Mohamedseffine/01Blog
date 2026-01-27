@@ -1,2 +1,12 @@
-/* Bootstrap only - CSS */
+.post-card {
+  background: var(--paper);
+  border-radius: 12px;
+}
 
+.post-snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 3.6em;
+}

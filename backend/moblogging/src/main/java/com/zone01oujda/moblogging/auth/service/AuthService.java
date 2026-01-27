@@ -119,6 +119,10 @@ public class AuthService {
             User user = userRepository.findByUsernameOrEmail(authentication.getName())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+            if (user.isBanned()) {
+                throw new BadRequestException("Your account is banned. Please contact support.");
+            }
+
             // Generate JWT token
             return issueTokens(user);
         } catch (org.springframework.security.core.AuthenticationException e) {
@@ -144,6 +148,10 @@ public class AuthService {
         String username = tokenProvider.getUsername(refreshToken);
         User user = userRepository.findByUsernameOrEmail(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.isBanned()) {
+            throw new BadRequestException("Your account is banned. Please contact support.");
+        }
 
         RefreshToken stored = refreshTokenRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
                 .orElseThrow(() -> new BadRequestException("Refresh token not found"));

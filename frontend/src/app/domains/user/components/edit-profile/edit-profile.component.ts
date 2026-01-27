@@ -5,11 +5,12 @@ import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { AuthService } from '@core/services/auth.service';
 import { User } from '../../models/user.model';
+import { DebounceClickDirective } from '@shared/directives/debounce-click.directive';
 
 @Component({
   selector: 'app-edit-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DebounceClickDirective],
   template: `
     <div class="container py-4">
       <div class="row justify-content-center">
@@ -59,7 +60,7 @@ import { User } from '../../models/user.model';
                 <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
                 <div *ngIf="success()" class="alert alert-success">{{ success() }}</div>
 
-                <button type="submit" class="btn btn-primary" [disabled]="loading()">
+                <button type="submit" class="btn btn-primary" [disabled]="loading()" appDebounceClick>
                   <span *ngIf="!loading()">Save changes</span>
                   <span *ngIf="loading()">Saving...</span>
                 </button>
@@ -120,7 +121,7 @@ export class EditProfileComponent {
     }).subscribe({
       next: () => {
         this.loading.set(false);
-        this.success.set('Profile updated successfully.');
+        // this.success.set('Profile updated successfully.');
         this.authService.refreshCurrentUser().subscribe({
           next: () => this.router.navigate(['/users/profile', id]),
           error: () => this.router.navigate(['/users/profile', id])

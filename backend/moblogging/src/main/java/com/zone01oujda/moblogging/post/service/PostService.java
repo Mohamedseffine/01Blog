@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.zone01oujda.moblogging.comment.dto.CommentDto;
 import com.zone01oujda.moblogging.comment.util.CommentMapper;
@@ -42,17 +43,20 @@ public class PostService {
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
     private final NotificationService notificationService;
+    private final com.zone01oujda.moblogging.report.repository.ReportRepository reportRepository;
     private final String uploadDir;
 
     public PostService(PostRepository postRepository, UserRepository userRepository, FileUploadUtil fileUploadUtil,
             FollowRepository followRepository,
             NotificationService notificationService,
+            com.zone01oujda.moblogging.report.repository.ReportRepository reportRepository,
             @Value("${files.uploadDirectory}") String uploadDir) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.fileUploadUtil = fileUploadUtil;
         this.followRepository = followRepository;
         this.notificationService = notificationService;
+        this.reportRepository = reportRepository;
         this.uploadDir = uploadDir;
     }
 
@@ -133,6 +137,20 @@ public class PostService {
         return postRepository.findByHiddenFalse(pageable).map(this::convertToDto);
     }
 
+    public Page<PostDto> getUserPosts(Long userId, int page, int size) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        if (SecurityUtil.hasRole("ADMIN")) {
+            return postRepository.findForAdmin(null, null, userId, pageable).map(this::convertToDto);
+        }
+
+        return postRepository.findByCreatorIdAndHiddenFalse(userId, pageable)
+                .map(this::convertToDto);
+    }
+
     public PostDto updatePost(Long postId, com.zone01oujda.moblogging.post.dto.UpdatePostDto dto) {
         String username = SecurityUtil.getCurrentUsername();
         if (username == null) {
@@ -164,6 +182,7 @@ public class PostService {
         return convertToDto(saved);
     }
 
+    @Transactional
     public void deletePost(Long postId) {
         String username = SecurityUtil.getCurrentUsername();
         if (username == null) {
@@ -178,6 +197,7 @@ public class PostService {
             throw new AccessDeniedException("You cannot delete this post");
         }
 
+        reportRepository.deleteByPostId(postId);
         postRepository.delete(post);
     }
 

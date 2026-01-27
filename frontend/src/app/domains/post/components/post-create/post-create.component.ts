@@ -5,11 +5,12 @@ import { Router } from '@angular/router';
 import { PostService } from '../../services/post.service';
 import { PostVisibility } from '../../models/post.model';
 import { ErrorService } from '@core/services/error.service';
+import { DebounceClickDirective } from '@shared/directives/debounce-click.directive';
 
 @Component({
   selector: 'app-post-create',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DebounceClickDirective],
   template: `
     <div class="container py-4">
       <div class="row justify-content-center">
@@ -49,7 +50,7 @@ import { ErrorService } from '@core/services/error.service';
 
                 <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
 
-                <button class="btn btn-primary" [disabled]="loading()">
+                <button class="btn btn-primary" [disabled]="loading()" appDebounceClick>
                   {{ loading() ? 'Creating...' : 'Create Post' }}
                 </button>
               </form>
@@ -106,7 +107,7 @@ export class PostCreateComponent {
       multipartFiles: this.mediaFiles()
     }).subscribe({
       next: () => {
-        this.errorService.addSuccess('Post created successfully.');
+        // this.errorService.addSuccess('Post created successfully.');
         this.router.navigate(['/posts/list']);
       },
       error: () => {

@@ -5,16 +5,18 @@ import { RouterLink } from '@angular/router';
 
 import { AdminService } from '../../services/admin.service';
 import { AdminUser, Page } from '../../models/admin.model';
+import { AuthService } from '@core/services/auth.service';
+import { DebounceClickDirective } from '@shared/directives/debounce-click.directive';
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, DebounceClickDirective],
   template: `
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="mb-0">User Management</h1>
-        <button class="btn btn-outline-secondary btn-sm" (click)="refresh()" [disabled]="loading()">
+        <button class="btn btn-outline-secondary btn-sm" appDebounceClick (appDebounceClick)="refresh()" [disabled]="loading()">
           <i class="bi bi-arrow-clockwise"></i> Refresh
         </button>
       </div>
@@ -53,7 +55,7 @@ import { AdminUser, Page } from '../../models/admin.model';
                   class="form-control form-control-sm"
                   [(ngModel)]="banReason[user.id]"
                   placeholder="Reason"
-                  [disabled]="user.banned"
+                  [disabled]="user.banned || isSelf(user)"
                 >
               </td>
               <td>
@@ -63,7 +65,7 @@ import { AdminUser, Page } from '../../models/admin.model';
                   [(ngModel)]="banDuration[user.id]"
                   placeholder="Optional"
                   min="1"
-                  [disabled]="user.banned"
+                  [disabled]="user.banned || isSelf(user)"
                 >
               </td>
               <td class="text-end">
@@ -72,15 +74,17 @@ import { AdminUser, Page } from '../../models/admin.model';
                 </a>
                 <button
                   class="btn btn-sm btn-danger me-2"
-                  (click)="ban(user)"
-                  [disabled]="user.banned || !banReason[user.id]"
+                  appDebounceClick
+                  (appDebounceClick)="ban(user)"
+                  [disabled]="user.banned || !banReason[user.id] || isSelf(user)"
                 >
                   Ban
                 </button>
                 <button
                   class="btn btn-sm btn-outline-success"
-                  (click)="unban(user)"
-                  [disabled]="!user.banned"
+                  appDebounceClick
+                  (appDebounceClick)="unban(user)"
+                  [disabled]="!user.banned || isSelf(user)"
                 >
                   Unban
                 </button>
@@ -113,16 +117,17 @@ export class UserManagementComponent implements OnInit {
   pageInfo = signal<Page<AdminUser> | null>(null);
   loading = signal(false);
   error = signal('');
+  currentPage = signal(0);
   banReason: Record<number, string> = {};
   banDuration: Record<number, string> = {};
 
-  constructor(private adminService: AdminService) { }
+  constructor(private adminService: AdminService, private authService: AuthService) { }
 
   ngOnInit(): void {
     this.refresh();
   }
 
-  refresh(page: number = 0) {
+  refresh(page: number = this.currentPage()) {
     this.loading.set(true);
     this.error.set('');
     this.adminService.getUsers(page, 10).subscribe({
@@ -130,6 +135,7 @@ export class UserManagementComponent implements OnInit {
         const pageData = res.data;
         this.users.set(pageData.content || []);
         this.pageInfo.set(pageData);
+        this.currentPage.set(pageData.number ?? page);
         this.loading.set(false);
       },
       error: () => {
@@ -147,6 +153,10 @@ export class UserManagementComponent implements OnInit {
   ban(user: AdminUser) {
     const reason = (this.banReason[user.id] || '').trim();
     if (!reason) return;
+    if (this.isSelf(user)) {
+      this.error.set('You cannot ban yourself.');
+      return;
+    }
 
     const durationValue = this.banDuration[user.id];
     const durationDays = durationValue ? Number(durationValue) : undefined;
@@ -154,10 +164,7 @@ export class UserManagementComponent implements OnInit {
 
     this.adminService.banUser(user.id, { reason, isPermanent, durationDays }).subscribe({
       next: () => {
-        this.users.update(list =>
-          list.map(u => u.id === user.id ? { ...u, banned: true } : u)
-        );
-
+        this.refresh(this.currentPage());
         this.banReason[user.id] = '';
         this.banDuration[user.id] = '';
       },
@@ -167,14 +174,20 @@ export class UserManagementComponent implements OnInit {
 
 
   unban(user: AdminUser) {
+    if (this.isSelf(user)) {
+      this.error.set('You cannot unban yourself.');
+      return;
+    }
     this.adminService.unbanUser(user.id).subscribe({
       next: () => {
-        this.users.update(list =>
-          list.map(u => u.id === user.id ? { ...u, banned: false } : u)
-        );
+        this.refresh(this.currentPage());
       },
       error: () => this.error.set(`Failed to unban ${user.username}.`)
     });
   }
 
+  isSelf(user: AdminUser): boolean {
+    const current = this.authService.getCurrentUserSnapshot();
+    return !!current && current.id === user.id;
+  }
 }

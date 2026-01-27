@@ -49,4 +49,12 @@ public class CustomUserDetails implements UserDetails {
     public boolean isCredentialsNonExpired() {
         return true;
     }
+
+    public boolean isBanned() {
+        return user.isBanned();
+    }
+
+    public Long getId() {
+        return user.getId();
+    }
 }

@@ -12,6 +12,8 @@ import com.zone01oujda.moblogging.post.enums.PostVisibility;
 public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByHiddenFalse(Pageable pageable);
 
+    Page<Post> findByCreatorIdAndHiddenFalse(Long creatorId, Pageable pageable);
+
     @Query("""
         SELECT p FROM Post p
         WHERE (:visibility IS NULL OR p.visibility = :visibility)

@@ -19,6 +19,7 @@ export interface AppError {
 })
 export class ErrorService {
   private errorsSubject = new BehaviorSubject<AppError[]>([]);
+  private recentKeys = new Map<string, number>();
   public errors$ = this.errorsSubject.asObservable();
 
   constructor() {}
@@ -84,7 +85,24 @@ export class ErrorService {
    * Add a custom app error
    */
   addAppError(error: AppError): void {
+    const now = Date.now();
+    const key = `${error.type}|${error.message}`.trim();
+    const last = this.recentKeys.get(key);
+
+    if (last && now - last < 2000) {
+      return;
+    }
+
+    this.recentKeys.set(key, now);
+    setTimeout(() => {
+      // Only clear if no newer entry has overwritten this timestamp
+      if (this.recentKeys.get(key) === now) {
+        this.recentKeys.delete(key);
+      }
+    }, 4000);
+
     const errors = this.errorsSubject.value;
+    error.timestamp = error.timestamp ?? new Date();
     this.errorsSubject.next([...errors, error]);
 
     // Auto-dismiss after duration

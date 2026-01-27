@@ -6,11 +6,12 @@ import { Router } from '@angular/router';
 import { RouterLink } from '@angular/router';
 import { WebSocketService } from '@core/services/websocket.service';
 import { NotificationService } from '@domains/notification/services/notification.service';
+import { DebounceClickDirective } from '@shared/directives/debounce-click.directive';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, DebounceClickDirective],
   template: `
     <div class="login-container">
       <div class="row justify-content-center">
@@ -54,7 +55,7 @@ import { NotificationService } from '@domains/notification/services/notification
 
                 
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" [disabled]="loading()">
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" [disabled]="loading()" appDebounceClick>
                   <i class="bi bi-box-arrow-in-right"></i>
                   <span *ngIf="!loading()">Sign In</span>
                   <span *ngIf="loading()">Signing in...</span>

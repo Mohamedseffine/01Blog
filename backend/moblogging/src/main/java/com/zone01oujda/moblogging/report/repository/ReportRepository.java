@@ -7,4 +7,8 @@ import com.zone01oujda.moblogging.report.enums.ReportStatus;
 
 public interface ReportRepository extends JpaRepository<Report, Long> {
     long countByStatus(ReportStatus status);
+
+    void deleteByPostId(Long postId);
+
+    void deleteByCommentId(Long commentId);
 }

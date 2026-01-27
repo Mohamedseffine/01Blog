@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 
 import { AdminService } from '../../services/admin.service';
 import { AdminReport, Page } from '../../models/admin.model';
+import { DebounceClickDirective } from '@shared/directives/debounce-click.directive';
 
 @Component({
   selector: 'app-report-management',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DebounceClickDirective],
   template: `
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -54,7 +55,8 @@ import { AdminReport, Page } from '../../models/admin.model';
               <td class="text-end">
                 <button
                   class="btn btn-sm btn-outline-success me-2"
-                  (click)="resolve(report)"
+                  appDebounceClick
+                  (appDebounceClick)="resolve(report)"
                   [disabled]="report.status === 'RESOLVED'"
                 >
                   Resolve
@@ -62,9 +64,18 @@ import { AdminReport, Page } from '../../models/admin.model';
                 <button
                   class="btn btn-sm btn-outline-danger"
                   *ngIf="report.contentType === 'POST' && report.contentId"
-                  (click)="deletePost(report)"
+                  appDebounceClick
+                  (appDebounceClick)="deletePost(report)"
                 >
                   Delete Post
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  *ngIf="report.contentType === 'COMMENT' && report.contentId"
+                  appDebounceClick
+                  (appDebounceClick)="deleteComment(report)"
+                >
+                  Delete Comment
                 </button>
               </td>
             </tr>
@@ -127,7 +138,7 @@ export class ReportManagementComponent implements OnInit {
   resolve(report: AdminReport) {
     this.adminService.resolveReport(report.id).subscribe({
       next: () => {
-        report.status = 'RESOLVED';
+        this.removeReports((r) => r.id === report.id);
       },
       error: () => {
         this.error.set(`Failed to resolve report #${report.id}.`);
@@ -139,11 +150,43 @@ export class ReportManagementComponent implements OnInit {
     if (!report.contentId) return;
     this.adminService.deletePost(report.contentId).subscribe({
       next: () => {
-        report.status = 'RESOLVED';
+        this.removeReports((r) => r.contentType === 'POST' && r.contentId === report.contentId);
       },
       error: () => {
         this.error.set(`Failed to delete post for report #${report.id}.`);
       }
     });
+  }
+
+  deleteComment(report: AdminReport) {
+    if (!report.contentId) return;
+    this.adminService.deleteComment(report.contentId).subscribe({
+      next: () => {
+        this.removeReports((r) => r.contentType === 'COMMENT' && r.contentId === report.contentId);
+      },
+      error: () => {
+        this.error.set(`Failed to delete comment for report #${report.id}.`);
+      }
+    });
+  }
+
+  private removeReports(predicate: (r: AdminReport) => boolean) {
+    const current = this.reports();
+    const remaining = current.filter((r) => !predicate(r));
+    const removedCount = current.length - remaining.length;
+    this.reports.set(remaining);
+
+    const page = this.pageInfo();
+    if (page && removedCount > 0) {
+      const totalElements = Math.max(0, (page.totalElements ?? current.length) - removedCount);
+      const totalPages = page.size ? Math.max(1, Math.ceil(totalElements / page.size)) : page.totalPages;
+      this.pageInfo.set({
+        ...page,
+        totalElements,
+        totalPages,
+        first: page.number === 0,
+        last: page.number + 1 >= totalPages
+      });
+    }
   }
 }

@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.zone01oujda.moblogging.admin.dto.AdminCommentDto;
 import com.zone01oujda.moblogging.admin.dto.AdminDashboardDto;
@@ -150,6 +151,9 @@ public class AdminService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         User admin = getCurrentAdmin();
+        if (user.getId().equals(admin.getId())) {
+            throw new AccessDeniedException("You cannot ban yourself");
+        }
         Ban ban = new Ban(user, admin, banRequest.getReason());
         boolean isPermanent = Boolean.TRUE.equals(banRequest.getIsPermanent());
         ban.setIsPermanent(isPermanent);
@@ -182,9 +186,11 @@ public class AdminService {
      * Delete post by ID
      * @param postId the post ID to delete
      */
+    @Transactional
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        reportRepository.deleteByPostId(postId);
         postRepository.delete(post);
     }
 
@@ -216,9 +222,11 @@ public class AdminService {
         commentRepository.save(comment);
     }
 
+    @Transactional
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        reportRepository.deleteByCommentId(commentId);
         commentRepository.delete(comment);
     }
 

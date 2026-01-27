@@ -13,11 +13,12 @@ import { AuthService } from '@core/services/auth.service';
 import { Comment } from '@domains/comment/models/comment.model';
 import { PostService } from '../../services/post.service';
 import { ErrorService } from '@core/services/error.service';
+import { DebounceClickDirective } from '@shared/directives/debounce-click.directive';
 
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, DebounceClickDirective],
   template: `
     <div class="container py-4">
       <ng-container *ngIf="post$ | async as post; else loading">
@@ -29,7 +30,7 @@ import { ErrorService } from '@core/services/error.service';
             <h1 class="mb-0">{{ post.postTitle }}</h1>
             <div class="d-flex gap-2" *ngIf="canManagePost(post)">
               <a class="btn btn-sm btn-outline-primary" [routerLink]="['/posts', post.id, 'edit']">Edit</a>
-              <button class="btn btn-sm btn-outline-danger" (click)="deletePost(post.id)">Delete</button>
+              <button class="btn btn-sm btn-outline-danger" appDebounceClick (appDebounceClick)="deletePost(post.id)">Delete</button>
             </div>
           </div>
           <div class="text-muted mb-3">by {{ post.creatorUsername }}</div>
@@ -40,7 +41,8 @@ import { ErrorService } from '@core/services/error.service';
               [class.btn-primary]="reacts.userReact === 'LIKE'"
               [class.btn-outline-primary]="reacts.userReact !== 'LIKE'"
               type="button"
-              (click)="togglePostReact(post.id, 'LIKE')"
+              appDebounceClick
+              (appDebounceClick)="togglePostReact(post.id, 'LIKE')"
             >
               👍 {{ reacts.likeCount }}
             </button>
@@ -49,14 +51,15 @@ import { ErrorService } from '@core/services/error.service';
               [class.btn-danger]="reacts.userReact === 'DISLIKE'"
               [class.btn-outline-danger]="reacts.userReact !== 'DISLIKE'"
               type="button"
-              (click)="togglePostReact(post.id, 'DISLIKE')"
+              appDebounceClick
+              (appDebounceClick)="togglePostReact(post.id, 'DISLIKE')"
             >
               👎 {{ reacts.dislikeCount }}
             </button>
           </div>
 
           <div class="mb-4" *ngIf="canReportPost()">
-            <button class="btn btn-sm btn-outline-danger" type="button" (click)="toggleReport()">
+            <button class="btn btn-sm btn-outline-danger" type="button" appDebounceClick (appDebounceClick)="toggleReport()">
               {{ reportOpen() ? 'Cancel Report' : 'Report Post' }}
             </button>
             <div class="card mt-3" *ngIf="reportOpen()">
@@ -76,7 +79,7 @@ import { ErrorService } from '@core/services/error.service';
                   </div>
                   <div *ngIf="reportError()" class="alert alert-danger">{{ reportError() }}</div>
                   <div *ngIf="reportSuccess()" class="alert alert-success">{{ reportSuccess() }}</div>
-                  <button class="btn btn-sm btn-danger" [disabled]="reportLoading()">
+                  <button class="btn btn-sm btn-danger" [disabled]="reportLoading()" appDebounceClick>
                     {{ reportLoading() ? 'Submitting...' : 'Submit Report' }}
                   </button>
                 </form>
@@ -103,7 +106,7 @@ import { ErrorService } from '@core/services/error.service';
                 required
               ></textarea>
               <div class="d-flex justify-content-end mt-2">
-                <button class="btn btn-sm btn-primary" [disabled]="commentLoading()">
+                <button class="btn btn-sm btn-primary" [disabled]="commentLoading()" appDebounceClick>
                   {{ commentLoading() ? 'Posting...' : 'Post Comment' }}
                 </button>
               </div>
@@ -126,7 +129,8 @@ import { ErrorService } from '@core/services/error.service';
                     [class.btn-primary]="cReact.userReact === 'LIKE'"
                     [class.btn-outline-primary]="cReact.userReact !== 'LIKE'"
                     type="button"
-                    (click)="toggleCommentReact(c.id, 'LIKE')"
+                    appDebounceClick
+                    (appDebounceClick)="toggleCommentReact(c.id, 'LIKE')"
                   >
                     👍 {{ cReact.likeCount }}
                   </button>
@@ -135,17 +139,18 @@ import { ErrorService } from '@core/services/error.service';
                     [class.btn-danger]="cReact.userReact === 'DISLIKE'"
                     [class.btn-outline-danger]="cReact.userReact !== 'DISLIKE'"
                     type="button"
-                    (click)="toggleCommentReact(c.id, 'DISLIKE')"
+                    appDebounceClick
+                    (appDebounceClick)="toggleCommentReact(c.id, 'DISLIKE')"
                   >
                     👎 {{ cReact.dislikeCount }}
                   </button>
                 </div>
                 <div class="mt-2 d-flex gap-2" *ngIf="canManageComment(c)">
-                  <button class="btn btn-sm btn-outline-primary" (click)="startEditComment(c)">Edit</button>
-                  <button class="btn btn-sm btn-outline-danger" (click)="deleteComment(c)">Delete</button>
+                  <button class="btn btn-sm btn-outline-primary" appDebounceClick (appDebounceClick)="startEditComment(c)">Edit</button>
+                  <button class="btn btn-sm btn-outline-danger" appDebounceClick (appDebounceClick)="deleteComment(c)">Delete</button>
                 </div>
                 <div class="mt-2" *ngIf="canReportComment(c)">
-                  <button class="btn btn-sm btn-outline-danger" type="button" (click)="toggleCommentReport(c.id)">
+                  <button class="btn btn-sm btn-outline-danger" type="button" appDebounceClick (appDebounceClick)="toggleCommentReport(c.id)">
                     {{ reportingCommentId() === c.id ? 'Cancel Report' : 'Report Comment' }}
                   </button>
                   <div class="card mt-2" *ngIf="reportingCommentId() === c.id">
@@ -165,7 +170,7 @@ import { ErrorService } from '@core/services/error.service';
                         </div>
                         <div *ngIf="reportError()" class="alert alert-danger">{{ reportError() }}</div>
                         <div *ngIf="reportSuccess()" class="alert alert-success">{{ reportSuccess() }}</div>
-                        <button class="btn btn-sm btn-danger" [disabled]="reportLoading()">
+                        <button class="btn btn-sm btn-danger" [disabled]="reportLoading()" appDebounceClick>
                           {{ reportLoading() ? 'Submitting...' : 'Submit Report' }}
                         </button>
                       </form>
@@ -181,8 +186,8 @@ import { ErrorService } from '@core/services/error.service';
                     name="editComment"
                   ></textarea>
                   <div class="d-flex justify-content-end gap-2 mt-2">
-                    <button class="btn btn-sm btn-outline-secondary" (click)="cancelEdit()">Cancel</button>
-                    <button class="btn btn-sm btn-primary" (click)="saveEditComment(c)">Save</button>
+                    <button class="btn btn-sm btn-outline-secondary" appDebounceClick (appDebounceClick)="cancelEdit()">Cancel</button>
+                    <button class="btn btn-sm btn-primary" appDebounceClick (appDebounceClick)="saveEditComment(c)">Save</button>
                   </div>
                 </div>
                 <div class="ms-3 mt-2" *ngFor="let child of c.children || []">
@@ -337,7 +342,7 @@ export class PostDetailComponent {
         this.commentLoading.set(false);
         this.comments.set([comment, ...this.comments()]);
         this.loadCommentReact(comment.id);
-        this.errorService.addSuccess('Comment posted successfully.');
+        // this.errorService.addSuccess('Comment posted successfully.');
       },
       error: () => {
         this.commentLoading.set(false);
@@ -438,7 +443,8 @@ export class PostDetailComponent {
         this.reportLoading.set(false);
         this.reportSuccess.set('Report submitted.');
         this.reportDescription.set('');
-        this.errorService.addSuccess('Report submitted successfully.');
+        this.toggleReport();
+        // this.errorService.addSuccess('Report submitted successfully.');
       },
       error: () => {
         this.reportLoading.set(false);
@@ -468,7 +474,7 @@ export class PostDetailComponent {
         this.reportSuccess.set('Report submitted.');
         this.reportingCommentId.set(null);
         this.reportDescription.set('');
-        this.errorService.addSuccess('Report submitted successfully.');
+        // this.errorService.addSuccess('Report submitted successfully.');
       },
       error: () => {
         this.reportLoading.set(false);

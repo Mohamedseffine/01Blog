@@ -50,6 +50,15 @@ public class PostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Posts retrieved successfully", posts));
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<Page<PostDto>>> getPostsByUser(
+            @PathVariable("userId") Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<PostDto> posts = postService.getUserPosts(userId, page, size);
+        return ResponseEntity.ok(new ApiResponse<>(true, "User posts retrieved successfully", posts));
+    }
+
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostDto>> getPostById(@PathVariable("postId") Long postId) {
         PostDto post = postService.getPostById(postId);
