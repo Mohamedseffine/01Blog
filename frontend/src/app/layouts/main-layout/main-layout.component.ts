@@ -60,7 +60,7 @@ import { NotificationService } from '@domains/notification/services/notification
       </nav>
 
       <main class="flex-grow-1 py-4">
-        <div class="container-lg">
+        <div class="container-lg bounded-container">
           <router-outlet></router-outlet>
         </div>
       </main>

@@ -139,6 +139,21 @@ a:focus {
   border-color: var(--border-soft);
 }
 
+.bounded-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.bounded-card {
+  width: 100%;
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .navbar {
   margin: 1.25rem 0;
   background:
@@ -384,6 +399,11 @@ a:focus {
   .navbar,
   .dropdown-menu {
     border-radius: var(--radius-md);
+  }
+
+  .bounded-container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 }
 
