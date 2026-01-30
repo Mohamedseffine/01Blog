@@ -25,7 +25,6 @@ export interface RegisterPayload {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private base = `${environment.apiUrl}/auth`
-  private accessToken: string | null = null
   private readonly tokenKey = 'auth_token';
   private currentUserSubject = new BehaviorSubject<CurrentUser | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -66,10 +65,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    if (this.accessToken) return this.accessToken;
-    const stored = localStorage.getItem(this.tokenKey);
-    this.accessToken = stored;
-    return stored;
+    return localStorage.getItem(this.tokenKey);
   }
 
   isAuthenticated(): boolean {
@@ -77,13 +73,11 @@ export class AuthService {
   }
 
   setToken(token: string) {
-    this.accessToken = token;
     localStorage.setItem(this.tokenKey, token);
     this.loadCurrentUser();
   }
 
   clearToken() {
-    this.accessToken = null;
     localStorage.removeItem(this.tokenKey);
     this.currentUserSubject.next(null);
   }

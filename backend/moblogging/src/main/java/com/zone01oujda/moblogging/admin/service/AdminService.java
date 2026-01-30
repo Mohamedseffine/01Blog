@@ -26,6 +26,7 @@ import com.zone01oujda.moblogging.entity.Report;
 import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.exception.AccessDeniedException;
 import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
+import com.zone01oujda.moblogging.auth.repository.RefreshTokenRepository;
 import com.zone01oujda.moblogging.post.enums.PostVisibility;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
 import com.zone01oujda.moblogging.report.enums.ReportStatus;
@@ -45,15 +46,17 @@ public class AdminService {
     private final CommentRepository commentRepository;
     private final ReportRepository reportRepository;
     private final BanRepository banRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public AdminService(UserRepository userRepository, PostRepository postRepository,
             CommentRepository commentRepository, ReportRepository reportRepository,
-            BanRepository banRepository) {
+            BanRepository banRepository, RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.reportRepository = reportRepository;
         this.banRepository = banRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     /**
@@ -239,6 +242,19 @@ public class AdminService {
     public Page<AdminReportDto> getReports(int page, int size) {
         return reportRepository.findAll(PageRequest.of(page, size))
             .map(this::toAdminReportDto);
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+        User target = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User current = getCurrentAdmin();
+        if (target.getId().equals(current.getId())) {
+            throw new AccessDeniedException("You cannot delete your own account");
+        }
+        refreshTokenRepository.deleteByUserId(target.getId());
+        // Reports, comments, posts, etc. are set to cascade/orphan removal; repo delete will cascade.
+        userRepository.delete(target);
     }
 
     /**

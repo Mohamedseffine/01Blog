@@ -20,7 +20,7 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, DebounceClickDirective],
   template: `
-    <div class="container py-4">
+    <div class="container py-4 post-detail-card">
       <ng-container *ngIf="post$ | async as post; else loading">
         <ng-container *ngIf="post; else errorTpl">
           <div class="mb-3">
@@ -86,12 +86,12 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
               </div>
             </div>
           </div>
-          <div class="mb-4">
-            <span class="badge bg-secondary me-2" *ngFor="let subject of post.postSubject">
+          <div class="mb-4 post-content text-wrap-anywhere d-flex flex-wrap gap-2">
+            <span class="badge bg-secondary subject-badge" *ngFor="let subject of post.postSubject">
               {{ subject }}
             </span>
           </div>
-          <div class="lead" style="white-space: pre-wrap;">{{ post.postContent }}</div>
+          <div class="lead post-content text-wrap-anywhere">{{ post.postContent }}</div>
 
           <div class="mt-5">
             <h4 class="mb-3">Comments</h4>
@@ -122,7 +122,7 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
             <div class="list-group">
               <div class="list-group-item" *ngFor="let c of comments()">
                 <div class="small text-muted">{{ c.createdAt | date:'short' }}</div>
-                <div>{{ c.content }}</div>
+                <div class="comment-body text-wrap-anywhere">{{ c.content }}</div>
                 <div class="d-flex gap-2 mt-2" *ngIf="commentReacts(c.id) as cReact">
                   <button
                     class="btn btn-sm"

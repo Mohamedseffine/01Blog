@@ -1,8 +1,10 @@
 .login-container {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px 12px;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
 }
 
 .login-container .card {

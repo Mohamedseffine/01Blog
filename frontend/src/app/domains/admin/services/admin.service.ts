@@ -124,6 +124,12 @@ export class AdminService {
     );
   }
 
+  deleteUser(userId: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(`${this.base}/users/${userId}`).pipe(
+      catchError(this.handleError<ApiResponse<void>>('Unable to delete user.'))
+    );
+  }
+
   unbanUser(userId: number): Observable<ApiResponse<void>> {
     return this.http.post<ApiResponse<void>>(`${this.base}/users/${userId}/unban`, {}).pipe(
       catchError(this.handleError<ApiResponse<void>>('Unable to unban user.'))

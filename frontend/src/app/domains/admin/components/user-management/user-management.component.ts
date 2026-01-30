@@ -88,6 +88,14 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                 >
                   Unban
                 </button>
+                <button
+                  class="btn btn-sm btn-outline-danger ms-2"
+                  appDebounceClick
+                  (appDebounceClick)="deleteUser(user)"
+                  [disabled]="isSelf(user)"
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           </tbody>
@@ -183,6 +191,21 @@ export class UserManagementComponent implements OnInit {
         this.refresh(this.currentPage());
       },
       error: () => this.error.set(`Failed to unban ${user.username}.`)
+    });
+  }
+
+  deleteUser(user: AdminUser) {
+    if (this.isSelf(user)) {
+      this.error.set('You cannot delete yourself.');
+      return;
+    }
+    this.adminService.deleteUser(user.id).subscribe({
+      next: () => {
+        this.users.set(this.users().filter(u => u.id !== user.id));
+        this.banReason[user.id] = '';
+        this.banDuration[user.id] = '';
+      },
+      error: () => this.error.set(`Failed to delete ${user.username}.`)
     });
   }
 

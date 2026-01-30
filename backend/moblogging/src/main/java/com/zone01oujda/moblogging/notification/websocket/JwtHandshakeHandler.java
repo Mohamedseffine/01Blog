@@ -28,13 +28,11 @@ public class JwtHandshakeHandler extends DefaultHandshakeHandler {
             return null;
         }
 
-        String username;
-        try {
-            if (!jwtprovider.validateToken(token)) {
-                return null;
-            }
-            username = jwtprovider.getUsername(token);
-        } catch (Exception ex) {
+        if (!jwtprovider.validateToken(token)) {
+            return null;
+        }
+        String username = jwtprovider.getUsernameIfValid(token);
+        if (username == null) {
             return null;
         }
 

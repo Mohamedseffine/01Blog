@@ -75,6 +75,35 @@ public class JwtTokenProvider {
         return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getSubject();
     }
 
+    public String getUsernameIfValid(String token) {
+        try {
+            return getUsername(token);
+        } catch (JwtException | IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    public Long getUserId(String token) {
+        Object val = Jwts.parserBuilder().setSigningKey(secretKey).build()
+            .parseClaimsJws(token)
+            .getBody()
+            .get("UserId");
+        if (val instanceof Integer) {
+            return ((Integer) val).longValue();
+        }
+        if (val instanceof Long) {
+            return (Long) val;
+        }
+        if (val instanceof String) {
+            try {
+                return Long.parseLong((String) val);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     public long getRefreshExpirationSeconds() {
         return jwtRefreshExpiration / 1000L;
     }

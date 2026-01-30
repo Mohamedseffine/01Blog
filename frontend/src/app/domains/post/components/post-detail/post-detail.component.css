@@ -1,2 +1,22 @@
 /* Bootstrap only - CSS */
+/* Constrain long content and links */
+.post-content,
+.comment-body,
+.list-group-item {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  max-width: 100%;
+}
 
+.post-detail-card {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.subject-badge {
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}

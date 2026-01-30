@@ -154,6 +154,12 @@ a:focus {
   margin-right: auto;
 }
 
+.text-wrap-anywhere {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .navbar {
   margin: 1.25rem 0;
   background:

@@ -2,6 +2,7 @@ package com.zone01oujda.moblogging.security;
 
 import java.io.IOException;
 
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -32,26 +33,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
-            if (jwtTokenProvider.validateToken(token)) {
-                String username = jwtTokenProvider.getUsername(token);
-                try {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                    if (userDetails instanceof CustomUserDetails custom && custom.isBanned()) {
+            if (!jwtTokenProvider.validateToken(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            String username = jwtTokenProvider.getUsernameIfValid(token);
+            Long userIdFromToken = jwtTokenProvider.getUserId(token);
+            if (username == null || userIdFromToken == null) {
+                SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                response.getWriter().write("{\"success\":false,\"message\":\"Invalid token\"}");
+                return;
+            }
+
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (userDetails instanceof CustomUserDetails custom) {
+                    if (!custom.getId().equals(userIdFromToken)) {
+                        SecurityContextHolder.clearContext();
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        response.getWriter().write("{\"success\":false,\"message\":\"Invalid token subject\"}");
+                        return;
+                    }
+                    if (custom.isBanned()) {
                         SecurityContextHolder.clearContext();
                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                        response.setContentType("application/json");
+                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                         response.getWriter().write("{\"success\":false,\"message\":\"Account is banned.\"}");
                         return;
                     }
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                    );
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                } catch (UsernameNotFoundException ex) {
-                    SecurityContextHolder.clearContext();
                 }
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities()
+                );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (UsernameNotFoundException ex) {
+                SecurityContextHolder.clearContext();
             }
         }
         filterChain.doFilter(request, response);

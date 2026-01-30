@@ -89,6 +89,12 @@ public class AdminController {
         );
     }
 
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable("userId") Long userId) {
+        adminService.deleteUser(userId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "User deleted successfully"));
+    }
+
     @PostMapping("/users/{userId}/unban")
     public ResponseEntity<ApiResponse<Void>> unbanUser(@PathVariable("userId") Long userId) {
         adminService.unbanUser(userId);

@@ -97,7 +97,7 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
               </div>
 
               <div class="mt-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-2 posts-header">
                   <div>
                     <h4 class="mb-0">Posts</h4>
                     <p class="text-muted mb-0">
@@ -114,7 +114,7 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                   </a>
                 </div>
 
-                <div class="card">
+                <div class="card bounded-card">
                   <div class="card-body">
                     <div *ngIf="postsLoading()" class="text-muted">Loading posts...</div>
                     <div *ngIf="postsError()" class="alert alert-danger mb-0">{{ postsError() }}</div>
@@ -123,24 +123,24 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                     </div>
 
                     <div class="row g-3" *ngIf="posts().length && !postsError()">
-                      <div class="col-md-6" *ngFor="let post of posts()">
+                      <div class="col-md-6 posts-grid" *ngFor="let post of posts()">
                         <div class="post-card h-100 p-3 shadow-sm border">
                           <div class="d-flex justify-content-between align-items-start mb-1">
-                            <h6 class="mb-1">{{ post.postTitle }}</h6>
+                            <h6 class="mb-1 text-wrap-anywhere">{{ (post.postTitle || '') | slice:0:30 }}{{ (post.postTitle?.length || 0) > 30 ? '...' : '' }}</h6>
                             <a
                               [routerLink]="['/posts', post.id]"
                               class="btn btn-sm btn-outline-primary"
                               type="button"
-                            >
-                              Open
-                            </a>
-                          </div>
-                          <p class="text-muted small mb-2 post-snippet">
-                            {{ post.postContent }}
-                          </p>
+                        >
+                          Open
+                        </a>
+                      </div>
+                      <p class="text-muted small mb-2 post-snippet">
+                        {{ (post.postContent || '') | slice:0:30 }}{{ (post.postContent?.length || 0) > 30 ? '...' : '' }}
+                      </p>
                           <div class="d-flex flex-wrap gap-2" *ngIf="post.postSubject?.length">
-                            <span class="badge bg-light text-dark border" *ngFor="let subject of post.postSubject">
-                              {{ subject }}
+                            <span class="badge bg-light text-dark border subject-badge" *ngFor="let subject of post.postSubject">
+                              {{ (subject|| '') | slice:0:30 }}{{ (subject.length || 0) > 30 ? '...' : '' }} 
                             </span>
                           </div>
                         </div>

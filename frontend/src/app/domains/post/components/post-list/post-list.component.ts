@@ -24,20 +24,24 @@ import { Post } from '../../models/post.model';
       </div>
 
       <div class="row g-4">
-        <div class="col-md-6 col-lg-4" *ngFor="let post of posts()">
-          <div class="card h-100 shadow-sm">
+        <div class="col-sm-6 col-lg-4" *ngFor="let post of posts()">
+          <div class="card h-100 shadow-sm bounded-card">
             <div class="card-body">
-              <h5 class="card-title">{{ post.postTitle }}</h5>
-              <p class="card-text text-muted text-truncate-multiline">
-                {{ post.postContent }}
+              <h5 class="card-title text-wrap-anywhere">{{ (post.postTitle || '') | slice:0:30 }}{{ (post.postTitle?.length || 0) > 30 ? '...' : '' }}</h5>
+              <p class="card-text text-muted text-truncate-multiline text-wrap-anywhere">
+                {{ (post.postContent || '') | slice:0:30 }}{{ (post.postContent?.length || 0) > 30 ? '...' : '' }}
               </p>
-              <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <small class="text-muted">by {{ post.creatorUsername }}</small>
                 <a [routerLink]="['/posts', post.id]" class="btn btn-sm btn-outline-primary">Read More</a>
               </div>
             </div>
             <div class="card-footer bg-light small text-muted">
-              {{ post.postSubject.join(', ') }}
+              <div class="d-flex flex-wrap gap-2">
+                <span class="badge bg-secondary subject-badge" *ngFor="let subject of post.postSubject">
+                 {{ (subject|| '') | slice:0:30 }}{{ (subject.length || 0) > 30 ? '...' : '' }} 
+                </span>
+              </div>
             </div>
           </div>
         </div>

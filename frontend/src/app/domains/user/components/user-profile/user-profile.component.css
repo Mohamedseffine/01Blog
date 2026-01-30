@@ -1,6 +1,23 @@
 .post-card {
   background: var(--paper);
   border-radius: 12px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.posts-header {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.posts-grid .post-card {
+  width: 100%;
+}
+
+.subject-badge {
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .post-snippet {
@@ -9,4 +26,6 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   min-height: 3.6em;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }

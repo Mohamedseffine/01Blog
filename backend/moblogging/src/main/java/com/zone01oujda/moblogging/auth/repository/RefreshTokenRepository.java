@@ -8,4 +8,6 @@ import com.zone01oujda.moblogging.entity.RefreshToken;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findTopByUserIdOrderByCreatedAtDesc(Long userId);
+
+    void deleteByUserId(Long userId);
 }
