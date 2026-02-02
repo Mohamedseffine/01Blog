@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -43,12 +43,31 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                   </select>
                 </div>
 
-                <div class="mb-3">
-                  <label class="form-label">Media (optional)</label>
-                  <input type="file" class="form-control" multiple accept="image/*,video/*" (change)="onFilesChange($event)" />
-                </div>
+              <div class="mb-3">
+                <label class="form-label">Media (optional)</label>
+                <input type="file" class="form-control" multiple accept="image/*,video/*" (change)="onFilesChange($event)" />
+              </div>
 
-                <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
+              <div class="row g-3 mb-3" *ngIf="mediaPreviews().length">
+                <div class="col-md-4" *ngFor="let media of mediaPreviews(); let i = index">
+                  <div class="ratio ratio-4x3 rounded overflow-hidden shadow-sm position-relative">
+                    <ng-container *ngIf="media.type.startsWith('video'); else imageTpl">
+                      <video class="w-100 h-100" [src]="media.url" controls></video>
+                    </ng-container>
+                    <ng-template #imageTpl>
+                      <img class="img-fluid w-100 h-100 object-fit-cover" [src]="media.url" alt="Preview" />
+                    </ng-template>
+                    <button
+                      type="button"
+                      class="btn-close position-absolute top-0 end-0 m-1 bg-light rounded-circle p-2 shadow-sm"
+                      aria-label="Remove media"
+                      (click)="removeMedia(i)"
+                    ></button>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
 
                 <button class="btn btn-primary" [disabled]="loading()" appDebounceClick>
                   {{ loading() ? 'Creating...' : 'Create Post' }}
@@ -61,13 +80,14 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
     </div>
   `,
 })
-export class PostCreateComponent {
+export class PostCreateComponent implements OnDestroy {
   PostVisibility = PostVisibility;
   title = signal('');
   content = signal('');
   subjects = signal('');
   visibility = signal<PostVisibility>(PostVisibility.PUBLIC);
   mediaFiles = signal<File[]>([]);
+  mediaPreviews = signal<{ url: string; type: string }[]>([]);
   loading = signal(false);
   error = signal('');
 
@@ -77,10 +97,15 @@ export class PostCreateComponent {
     private errorService: ErrorService
   ) {}
 
+  ngOnDestroy(): void {
+    this.revokePreviews();
+  }
+
   onFilesChange(event: Event) {
     const input = event.target as HTMLInputElement;
     const files = input.files ? Array.from(input.files) : [];
     this.mediaFiles.set(files);
+    this.buildPreviews(files);
   }
 
   submit(event: Event) {
@@ -115,5 +140,28 @@ export class PostCreateComponent {
         this.error.set('Unable to create post.');
       }
     });
+  }
+
+  private buildPreviews(files: File[]) {
+    this.revokePreviews();
+    const previews = files.map((file) => ({
+      url: URL.createObjectURL(file),
+      type: file.type
+    }));
+    this.mediaPreviews.set(previews);
+  }
+
+  private revokePreviews() {
+    this.mediaPreviews().forEach((p) => URL.revokeObjectURL(p.url));
+    this.mediaPreviews.set([]);
+  }
+
+  removeMedia(index: number) {
+    const files = this.mediaFiles();
+    const previews = this.mediaPreviews();
+    if (index < 0 || index >= files.length) return;
+    URL.revokeObjectURL(previews[index]?.url);
+    this.mediaFiles.set(files.filter((_, i) => i !== index));
+    this.mediaPreviews.set(previews.filter((_, i) => i !== index));
   }
 }

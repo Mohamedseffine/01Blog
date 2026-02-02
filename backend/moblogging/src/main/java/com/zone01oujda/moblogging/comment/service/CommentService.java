@@ -106,6 +106,9 @@ public class CommentService {
 
     public Page<CommentDto> getCommentsByPost(Long postId, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "createdAt"));
+        if (SecurityUtil.hasRole("ADMIN")) {
+            return commentRepository.findByPostId(postId, pageable).map(this::convertToDto);
+        }
         return commentRepository.findByPostIdAndHiddenFalse(postId, pageable)
                 .map(this::convertToDto);
     }

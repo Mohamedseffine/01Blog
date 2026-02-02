@@ -84,7 +84,18 @@ export class PostService {
    * Update an existing post
    */
   updatePost(id: number, dto: UpdatePostDto): Observable<Post> {
-    return this.http.put<any>(`${this.apiUrl}/${id}`, dto).pipe(
+    const formData = new FormData();
+    if (dto.postTitle !== undefined) formData.append('postTitle', dto.postTitle);
+    if (dto.postContent !== undefined) formData.append('postContent', dto.postContent);
+    if (dto.postVisibility !== undefined) formData.append('postVisibility', dto.postVisibility);
+    if (dto.postSubject) {
+      dto.postSubject.forEach(subject => formData.append('postSubject', subject));
+    }
+    if (dto.multipartFiles) {
+      dto.multipartFiles.forEach(file => formData.append('multipartFiles', file));
+    }
+
+    return this.http.put<any>(`${this.apiUrl}/${id}`, formData).pipe(
       map((res) => res?.data ?? res),
       catchError(this.handleError<Post>('Unable to update post.'))
     );

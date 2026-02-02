@@ -76,7 +76,9 @@ import { AdminComment, Page } from '../../models/admin.model';
           <tbody>
             <tr *ngFor="let comment of comments()">
               <td>{{ comment.id }}</td>
-              <td>{{ comment.content }}</td>
+              <td>
+                {{ (comment.content || '') | slice:0:30 }}{{ (comment.content?.length || 0) > 30 ? '...' : '' }}
+              </td>
               <td>{{ comment.postId || 'Unknown' }}</td>
               <td>{{ comment.creatorUsername || comment.creatorId || 'Unknown' }}</td>
               <td>{{ comment.createdAt | date:'short' }}</td>

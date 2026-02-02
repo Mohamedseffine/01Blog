@@ -25,6 +25,7 @@ export interface UpdatePostDto {
   postContent?: string;
   postSubject?: string[];
   postVisibility?: PostVisibility;
+  multipartFiles?: File[];
 }
 
 export enum PostVisibility {

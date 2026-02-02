@@ -178,6 +178,11 @@ public class PostService {
             post.setPostVisibility(dto.getPostVisibility());
         }
 
+        if (dto.getMultipartFiles() != null && dto.getMultipartFiles().length > 0) {
+            String mediaUrls = uploadMediaFiles(dto.getMultipartFiles());
+            post.setMediaUrl(mediaUrls);
+        }
+
         Post saved = postRepository.save(post);
         return convertToDto(saved);
     }

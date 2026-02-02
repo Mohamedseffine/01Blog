@@ -67,10 +67,10 @@ public class PostController {
         );
     }
 
-    @PutMapping("/{postId}")
+    @PutMapping(value = "/{postId}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<ApiResponse<PostDto>> updatePost(
             @PathVariable("postId") Long postId,
-            @Valid @org.springframework.web.bind.annotation.RequestBody UpdatePostDto updatePostDto) {
+            @Valid @org.springframework.web.bind.annotation.ModelAttribute UpdatePostDto updatePostDto) {
         PostDto post = postService.updatePost(postId, updatePostDto);
         return ResponseEntity.ok(new ApiResponse<>(true, "Post updated successfully", post));
     }
