@@ -18,6 +18,7 @@ public class LoginRequestDto {
      * Username or email address
      */
     @NotBlank(message = "Username or email is required")
+    @Size(min = 3, max = 72, message = "Username or email must be 3-72 characters")
     public String usernameOrEmail;
 
     /**

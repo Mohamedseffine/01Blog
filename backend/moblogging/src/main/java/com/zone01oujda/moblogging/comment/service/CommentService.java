@@ -16,6 +16,7 @@ import com.zone01oujda.moblogging.entity.Comment;
 import com.zone01oujda.moblogging.entity.Post;
 import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.exception.AccessDeniedException;
+import com.zone01oujda.moblogging.exception.BadRequestException;
 import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
 import com.zone01oujda.moblogging.user.repository.UserRepository;
@@ -73,8 +74,17 @@ public class CommentService {
         Post post = postRepository.findById(dto.postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
 
+        if (Boolean.TRUE.equals(post.getHidden()) && !SecurityUtil.hasRole("ADMIN")) {
+            throw new ResourceNotFoundException("Post not found");
+        }
+
         // Create and save comment
-        Comment comment = new Comment(dto.content, parent);
+        String content = trimToNull(dto.content);
+        if (content == null) {
+            throw new BadRequestException("Comment content is required");
+        }
+
+        Comment comment = new Comment(content, parent);
         comment.setCreator(user);
         comment.setPost(post);
         comment = commentRepository.save(comment);
@@ -101,10 +111,16 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
+        ensurePostCommentsVisible(comment.getPost());
         return convertToDto(comment);
     }
 
     public Page<CommentDto> getCommentsByPost(Long postId, int page, int size) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+
+        ensurePostCommentsVisible(post);
+
         PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "createdAt"));
         if (SecurityUtil.hasRole("ADMIN")) {
             return commentRepository.findByPostId(postId, pageable).map(this::convertToDto);
@@ -126,7 +142,12 @@ public class CommentService {
             throw new AccessDeniedException("You cannot update this comment");
         }
 
-        comment.setContent(content);
+        String newContent = trimToNull(content);
+        if (newContent == null) {
+            throw new BadRequestException("Comment content is required");
+        }
+
+        comment.setContent(newContent);
         comment.setModified(true);
         comment.setModifiedAt(java.time.LocalDateTime.now());
         Comment saved = commentRepository.save(comment);
@@ -143,8 +164,7 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
-        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
-        if (!isAdmin && (comment.getCreator() == null || !username.equals(comment.getCreator().getUsername()))) {
+        if (comment.getCreator() == null || !username.equals(comment.getCreator().getUsername())) {
             throw new AccessDeniedException("You cannot delete this comment");
         }
 
@@ -178,5 +198,29 @@ public class CommentService {
         dto.setChildren(childDtos);
 
         return dto;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private void ensurePostCommentsVisible(Post post) {
+        if (!Boolean.TRUE.equals(post.getHidden())) {
+            return;
+        }
+
+        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
+        String username = SecurityUtil.getCurrentUsername();
+        boolean isPostCreator = username != null
+            && post.getCreator() != null
+            && username.equals(post.getCreator().getUsername());
+
+        if (!isAdmin && !isPostCreator) {
+            throw new ResourceNotFoundException("Post not found");
+        }
     }
 }

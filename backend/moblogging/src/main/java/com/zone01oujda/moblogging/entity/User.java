@@ -5,10 +5,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.zone01oujda.moblogging.user.enums.AccountStatus;
 import com.zone01oujda.moblogging.user.enums.Gender;
 import com.zone01oujda.moblogging.user.enums.ProfileType;
 import com.zone01oujda.moblogging.user.enums.Role;
-import com.zone01oujda.moblogging.user.enums.AccountStatus;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -99,14 +99,8 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<React> reacts;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SavedPost> savedPosts;
+ 
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CloseFriend> closeFriends;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Ban> bans;
 
 
     protected User() {
@@ -131,9 +125,6 @@ public class User {
         this.followers = new ArrayList<>();
         this.following = new ArrayList<>();
         this.reacts = new ArrayList<>();
-        this.savedPosts = new ArrayList<>();
-        this.closeFriends = new ArrayList<>();
-        this.bans = new ArrayList<>();
     }
 
     public Long getId() {
@@ -326,30 +317,7 @@ public class User {
     public void setReacts(List<React> reacts) {
         this.reacts = reacts;
     }
-
-    public List<SavedPost> getSavedPosts() {
-        return savedPosts;
-    }
-
-    public void setSavedPosts(List<SavedPost> savedPosts) {
-        this.savedPosts = savedPosts;
-    }
-
-    public List<CloseFriend> getCloseFriends() {
-        return closeFriends;
-    }
-
-    public void setCloseFriends(List<CloseFriend> closeFriends) {
-        this.closeFriends = closeFriends;
-    }
-
-    public List<Ban> getBans() {
-        return bans;
-    }
-
-    public void setBans(List<Ban> bans) {
-        this.bans = bans;
-    }
+    
 
     public LocalDateTime getModifiedAt() {
         return modifiedAt;

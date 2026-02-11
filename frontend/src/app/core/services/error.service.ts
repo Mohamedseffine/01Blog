@@ -101,9 +101,9 @@ export class ErrorService {
       }
     }, 4000);
 
-    const errors = this.errorsSubject.value;
     error.timestamp = error.timestamp ?? new Date();
-    this.errorsSubject.next([...errors, error]);
+    // Only keep a single alert visible at any time
+    this.errorsSubject.next([error]);
 
     // Auto-dismiss after duration
     if (error.duration && error.duration > 0) {

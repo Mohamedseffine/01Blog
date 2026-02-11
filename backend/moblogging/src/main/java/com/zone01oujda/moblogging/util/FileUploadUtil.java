@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.zone01oujda.moblogging.exception.BadRequestException;
+
 @Component
 public class FileUploadUtil {
 
@@ -24,7 +26,7 @@ public class FileUploadUtil {
 
     public String upload(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File is empty");
+            throw new BadRequestException("File is empty");
         }
         
         try {
@@ -32,7 +34,7 @@ public class FileUploadUtil {
             String subDir = type.startsWith("image") ? "images" : "videos";
             
             if (!type.startsWith("image") && !type.startsWith("video")) {
-                throw new IllegalArgumentException("Unsupported file type: " + type);
+                throw new BadRequestException("Unsupported file type: " + type);
             }
             
             Path path = Paths.get(uploadDir, subDir);

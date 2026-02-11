@@ -51,6 +51,8 @@ public class ReactService {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
 
+        ensurePostInteractable(post);
+
         React react = reactRepository.findByUserIdAndPostId(user.getId(), postId).orElse(null);
         ReactType previousType = react != null ? react.getType() : null;
         if (react == null) {
@@ -100,6 +102,8 @@ public class ReactService {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
+        ensurePostInteractable(comment.getPost());
+
         CommentReact react = commentReactRepository.findByUserIdAndCommentId(user.getId(), commentId).orElse(null);
         if (react == null) {
             react = new CommentReact(user, comment, type);
@@ -140,5 +144,14 @@ public class ReactService {
         }
         return userRepository.findByUsernameOrEmail(username)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    private void ensurePostInteractable(Post post) {
+        if (post == null) {
+            throw new ResourceNotFoundException("Post not found");
+        }
+        if (Boolean.TRUE.equals(post.getHidden()) && !SecurityUtil.hasRole("ADMIN")) {
+            throw new ResourceNotFoundException("Post not found");
+        }
     }
 }

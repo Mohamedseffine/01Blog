@@ -7,6 +7,7 @@ import com.zone01oujda.moblogging.post.enums.PostVisibility;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,12 +24,14 @@ public class CreatePostDto {
      * Post title (required, non-blank)
      */
     @NotBlank(message = "Post title is required")
+    @Size(min = 3, max = 120, message = "Post title must be 3-120 characters")
     public String postTitle;
 
     /**
      * Post content (required, non-blank)
      */
     @NotBlank(message = "Post content is required")
+    @Size(min = 10, max = 5000, message = "Post content must be 10-5000 characters")
     public String postContent;
     
     /**

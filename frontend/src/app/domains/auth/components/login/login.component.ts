@@ -23,7 +23,7 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
               </h3>
             </div>
             <div class="card-body p-4">
-              <form (submit)="submit($event)">
+              <form #loginForm="ngForm" (submit)="submit($event, loginForm)">
                 <div class="mb-3">
                   <label for="email" class="form-label">Username or Email</label>
                   <input 
@@ -34,7 +34,14 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                     [ngModel]="email()"
                     (ngModelChange)="email.set($event)"
                     name="email"
+                    #emailCtrl="ngModel"
+                    required
+                    minlength="3"
+                    maxlength="72"
                   >
+                  <div class="text-danger small mt-1" *ngIf="(loginForm.submitted || emailCtrl.touched) && emailCtrl.invalid">
+                    Username or email is required (3-72 characters).
+                  </div>
                 </div>
 
                 <div class="mb-3">
@@ -47,15 +54,19 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                     [ngModel]="password()"
                     (ngModelChange)="password.set($event)"
                     name="password"
+                    #passwordCtrl="ngModel"
                     required
                     minlength="8"
                     maxlength="72"
                   >
+                  <div class="text-danger small mt-1" *ngIf="(loginForm.submitted || passwordCtrl.touched) && passwordCtrl.invalid">
+                    Password must be between 8 and 72 characters.
+                  </div>
                 </div>
 
                 
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" [disabled]="loading()" appDebounceClick>
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" [disabled]="loading() || loginForm.invalid" appDebounceClick>
                   <i class="bi bi-box-arrow-in-right"></i>
                   <span *ngIf="!loading()">Sign In</span>
                   <span *ngIf="loading()">Signing in...</span>
@@ -84,11 +95,14 @@ export class LoginComponent {
   constructor(private auth: AuthService, private router: Router,
               private ws: WebSocketService, private notificationService: NotificationService) {}
 
-  submit(e: Event) {
+  submit(e: Event, form: any) {
     e.preventDefault();
     const email = this.email().trim();
     const password = this.password();
-    if (!email || !password) return;
+    if (form?.invalid || !email || !password) {
+      form?.control?.markAllAsTouched?.();
+      return;
+    }
     this.loading.set(true);
     this.auth.login({ usernameOrEmail: email, password })
       .subscribe({

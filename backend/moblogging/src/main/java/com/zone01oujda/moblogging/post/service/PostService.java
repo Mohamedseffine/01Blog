@@ -1,36 +1,39 @@
 package com.zone01oujda.moblogging.post.service;
 
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.zone01oujda.moblogging.comment.dto.CommentDto;
 import com.zone01oujda.moblogging.comment.util.CommentMapper;
+import com.zone01oujda.moblogging.entity.Follow;
 import com.zone01oujda.moblogging.entity.Post;
 import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.exception.AccessDeniedException;
 import com.zone01oujda.moblogging.exception.BadRequestException;
 import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
+import com.zone01oujda.moblogging.notification.enums.NotificationType;
+import com.zone01oujda.moblogging.notification.service.NotificationService;
 import com.zone01oujda.moblogging.post.dto.CreatePostDto;
 import com.zone01oujda.moblogging.post.dto.PostDto;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
-import com.zone01oujda.moblogging.notification.enums.NotificationType;
-import com.zone01oujda.moblogging.notification.service.NotificationService;
-import com.zone01oujda.moblogging.entity.Follow;
-import com.zone01oujda.moblogging.user.repository.UserRepository;
 import com.zone01oujda.moblogging.user.repository.FollowRepository;
+import com.zone01oujda.moblogging.user.repository.UserRepository;
 import com.zone01oujda.moblogging.util.FileUploadUtil;
 import com.zone01oujda.moblogging.util.SecurityUtil;
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * Service class for post operations
@@ -85,12 +88,18 @@ public class PostService {
         String mediaUrls = uploadMediaFiles(dto.multipartFiles);
 
         // Create and save post
+        String title = trimToNull(dto.postTitle);
+        String content = trimToNull(dto.postContent);
+        String[] subjects = normalizeSubjects(dto.postSubject);
+        if (title == null || content == null || subjects.length == 0) {
+            throw new BadRequestException("Post data is invalid");
+        }
         Post post = new Post(
-            String.join(",", dto.postSubject),
-            dto.postContent,
+            String.join(",", subjects),
+            content,
             mediaUrls,
             dto.postVisibility,
-            dto.postTitle
+            title
         );
         post.setCreator(user);
         post.setMediaUrl(mediaUrls);
@@ -122,7 +131,8 @@ public class PostService {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
 
-        if (Boolean.TRUE.equals(post.getHidden()) && !SecurityUtil.hasRole("ADMIN")) {
+        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
+        if (Boolean.TRUE.equals(post.getHidden()) && !isAdmin) {
             throw new ResourceNotFoundException("Post not found");
         }
 
@@ -134,7 +144,23 @@ public class PostService {
         if (SecurityUtil.hasRole("ADMIN")) {
             return postRepository.findAll(pageable).map(this::convertToDto);
         }
-        return postRepository.findByHiddenFalse(pageable).map(this::convertToDto);
+        User currentUser = requireAuthenticatedUser();
+
+        List<Long> creatorIds = new ArrayList<>();
+        creatorIds.add(currentUser.getId());
+        for (Follow follow : followRepository.findByFollowerId(currentUser.getId())) {
+            if (follow.getFollowing() != null && follow.getFollowing().getId() != null) {
+                creatorIds.add(follow.getFollowing().getId());
+            }
+        }
+        // Preserve order but remove duplicates
+        Set<Long> distinctCreatorIds = new LinkedHashSet<>(creatorIds);
+        if (distinctCreatorIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return postRepository.findByCreatorIdInAndHiddenFalse(distinctCreatorIds, pageable)
+                .map(this::convertToDto);
     }
 
     public Page<PostDto> getUserPosts(Long userId, int page, int size) {
@@ -165,14 +191,19 @@ public class PostService {
             throw new AccessDeniedException("You cannot update this post");
         }
 
-        if (dto.getPostTitle() != null && !dto.getPostTitle().isBlank()) {
-            post.setTitle(dto.getPostTitle().trim());
+        String newTitle = trimToNull(dto.getPostTitle());
+        if (newTitle != null) {
+            post.setTitle(newTitle);
         }
-        if (dto.getPostContent() != null && !dto.getPostContent().isBlank()) {
-            post.setContent(dto.getPostContent().trim());
+        String newContent = trimToNull(dto.getPostContent());
+        if (newContent != null) {
+            post.setContent(newContent);
         }
         if (dto.getPostSubject() != null && dto.getPostSubject().length > 0) {
-            post.setSubject(String.join(",", dto.getPostSubject()));
+            String[] subjects = normalizeSubjects(dto.getPostSubject());
+            if (subjects.length > 0) {
+                post.setSubject(String.join(",", subjects));
+            }
         }
         if (dto.getPostVisibility() != null) {
             post.setPostVisibility(dto.getPostVisibility());
@@ -251,6 +282,15 @@ public class PostService {
         }
     }
 
+    private User requireAuthenticatedUser() {
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        return userRepository.findByUsernameOrEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
     /**
      * Validate post creation data
      * @param dto the post creation data
@@ -314,5 +354,23 @@ public class PostService {
         dto.setCreatorUsername(post.getCreator().getUsername());
         dto.setComments(comments);
         return dto;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String[] normalizeSubjects(String[] subjects) {
+        if (subjects == null) {
+            return new String[0];
+        }
+        return java.util.Arrays.stream(subjects)
+                .filter(s -> s != null && !s.trim().isEmpty())
+                .map(String::trim)
+                .toArray(String[]::new);
     }
 }

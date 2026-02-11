@@ -63,6 +63,11 @@ public class AuthService {
      */
     public AuthTokensDto register(RegisterRequestDto dto) {
         try {
+            String email = trimToNull(dto.email);
+            String username = trimToNull(dto.username);
+            String firstName = trimToNull(dto.firstName);
+            String lastName = trimToNull(dto.lastName);
+
             // Validation is handled by @Valid annotation in controller
             // Additional business logic validation
             if (!dto.password.equals(dto.confirmPassword)) {
@@ -73,21 +78,27 @@ public class AuthService {
                 throw new BadRequestException("Password exceeds maximum length");
             }
 
-            if (userRepository.existsByEmail(dto.email)) {
+            if (email == null) {
+                throw new BadRequestException("Email is required");
+            }
+            if (userRepository.existsByEmail(email)) {
                 throw new ConflictException("Email already registered");
             }
 
-            if (userRepository.existsByUsername(dto.username)) {
+            if (username == null) {
+                throw new BadRequestException("Username is required");
+            }
+            if (userRepository.existsByUsername(username)) {
                 throw new ConflictException("Username already taken");
             }
 
             // Create new user
-            User user = new User(dto.username, dto.email, passwordEncoder.encode(dto.password));
+            User user = new User(username, email, passwordEncoder.encode(dto.password));
             user.setDateOfBirth(dto.birthDate);
             user.setGender(dto.gender);
             user.setProfileType(dto.profileType);
-            user.setFirstName(dto.firstName);
-            user.setLastName(dto.lastName);
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
             user.setRole(Role.USER);
             if (dto.profilePicture != null && !dto.profilePicture.isEmpty()) {
                 String uploadedPath = fileUploadUtil.upload(dto.profilePicture);
@@ -111,9 +122,13 @@ public class AuthService {
      */
     public AuthTokensDto login(LoginRequestDto dto) {
         try {
+            String usernameOrEmail = trimToNull(dto.usernameOrEmail);
+            if (usernameOrEmail == null) {
+                throw new BadRequestException("Invalid username/email or password");
+            }
             // Authenticate user with provided credentials
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(dto.usernameOrEmail, dto.password));
+                    new UsernamePasswordAuthenticationToken(usernameOrEmail, dto.password));
 
             // Retrieve user details
             User user = userRepository.findByUsernameOrEmail(authentication.getName())
@@ -188,6 +203,12 @@ public class AuthService {
                     token.setRevokedAt(LocalDateTime.now());
                     refreshTokenRepository.save(token);
                 });
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private AuthTokensDto issueTokens(User user) {

@@ -64,7 +64,14 @@ export class UserService {
   getProfilePicture(userId: number): Observable<string> {
     return this.http.get(`${this.apiUrl}/${userId}/profile-picture`, { responseType: 'blob' }).pipe(
       map((blob) => URL.createObjectURL(blob)),
-      catchError(this.handleError<string>('Unable to load profile picture.'))
+      catchError((error) => {
+        if (error?.status === 404) {
+          // No profile image set; silently return empty string
+          return of('');
+        }
+        this.errorService.addError('Unable to load profile picture.');
+        return throwError(() => error);
+      })
     );
   }
 

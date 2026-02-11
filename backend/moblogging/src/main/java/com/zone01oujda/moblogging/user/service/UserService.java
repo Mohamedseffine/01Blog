@@ -89,16 +89,16 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (dto.getUsername() != null && !dto.getUsername().isBlank()
-                && !dto.getUsername().equals(user.getUsername())) {
-            if (userRepository.existsByUsername(dto.getUsername())) {
+        String trimmedUsername = trimToNull(dto.getUsername());
+        if (trimmedUsername != null && !trimmedUsername.equals(user.getUsername())) {
+            if (userRepository.existsByUsername(trimmedUsername)) {
                 throw new ConflictException("Username already in use");
             }
-            user.setUsername(dto.getUsername());
+            user.setUsername(trimmedUsername);
         }
 
         if (dto.getBio() != null) {
-            user.setBio(dto.getBio());
+            user.setBio(trimToNull(dto.getBio()));
         }
 
         MultipartFile profilePicture = dto.getProfilePicture();
@@ -188,5 +188,13 @@ public class UserService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

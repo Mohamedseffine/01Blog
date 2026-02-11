@@ -114,6 +114,10 @@ export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
       
       // Handle 404 Not Found
       if (error.status === 404) {
+        if (req.url.includes('/profile-picture')) {
+          // Silent 404 for missing profile images; let callers decide how to handle
+          return throwError(() => error);
+        }
         if (req.url.includes('/posts/') || req.url.includes('/comments')) {
           router.navigate(['/not-found']);
           return throwError(() => error);

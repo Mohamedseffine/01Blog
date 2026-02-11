@@ -27,14 +27,14 @@ public class RegisterRequestDto {
      * First name (required, 3-15 characters)
      */
     @NotBlank(message = "First name is required")
-    @Size(min = 3, max = 15, message = "First name must be 3-15 characters")
+    @Size(min = 2, max = 30, message = "First name must be 2-30 characters")
     public String firstName;
 
     /**
      * Last name (required, 3-15 characters)
      */
     @NotBlank(message = "Last name is required")
-    @Size(min = 3, max = 15, message = "Last name must be 3-15 characters")
+    @Size(min = 2, max = 30, message = "Last name must be 2-30 characters")
     public String lastName;
 
     /**
@@ -49,6 +49,7 @@ public class RegisterRequestDto {
      */
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
+    @Size(max = 120, message = "Email must be 120 characters or fewer")
     public String email;
 
     /**

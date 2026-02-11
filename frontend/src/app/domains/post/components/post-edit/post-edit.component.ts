@@ -20,20 +20,29 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
             <div class="card shadow-sm">
               <div class="card-header bg-dark text-white">Edit Post</div>
               <div class="card-body">
-                <form (submit)="submit($event)">
+                <form #postForm="ngForm" (submit)="submit($event, postForm)" novalidate>
                   <div class="mb-3">
                     <label class="form-label">Title</label>
-                    <input class="form-control" name="title" [ngModel]="title()" (ngModelChange)="title.set($event)" required />
+                    <input class="form-control" name="title" [ngModel]="title()" (ngModelChange)="title.set($event)" required minlength="3" maxlength="120" #titleCtrl="ngModel" />
+                    <div class="text-danger small mt-1" *ngIf="(postForm.submitted || titleCtrl.touched) && titleCtrl.invalid">
+                      Title is required (3-120 characters).
+                    </div>
                   </div>
 
                   <div class="mb-3">
                     <label class="form-label">Content</label>
-                    <textarea class="form-control" name="content" rows="6" [ngModel]="content()" (ngModelChange)="content.set($event)" required></textarea>
+                    <textarea class="form-control" name="content" rows="6" [ngModel]="content()" (ngModelChange)="content.set($event)" required minlength="10" maxlength="5000" #contentCtrl="ngModel"></textarea>
+                    <div class="text-danger small mt-1" *ngIf="(postForm.submitted || contentCtrl.touched) && contentCtrl.invalid">
+                      Content is required (10-5000 characters).
+                    </div>
                   </div>
 
                   <div class="mb-3">
                     <label class="form-label">Subjects (comma separated)</label>
-                    <input class="form-control" name="subjects" [ngModel]="subjects()" (ngModelChange)="subjects.set($event)" required />
+                    <input class="form-control" name="subjects" [ngModel]="subjects()" (ngModelChange)="subjects.set($event)" required minlength="3" maxlength="180" #subjectsCtrl="ngModel" />
+                    <div class="text-danger small mt-1" *ngIf="(postForm.submitted || subjectsCtrl.touched) && (!hasSubjects() || subjectsCtrl.invalid)">
+                      Enter at least one subject (comma separated, min 3 characters total).
+                    </div>
                   </div>
 
                   <div class="mb-3">
@@ -45,11 +54,12 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                     </select>
                   </div>
 
-                  <div class="mb-3">
-                    <label class="form-label">Replace Media (optional)</label>
-                    <input type="file" class="form-control" multiple accept="image/*,video/*" (change)="onFilesChange($event)" />
-                    <small class="text-muted d-block mt-1">Uploading new files will replace existing media.</small>
-                  </div>
+                <div class="mb-3">
+                  <label class="form-label">Replace Media (optional)</label>
+                  <input type="file" class="form-control" multiple accept="image/*,video/*" (change)="onFilesChange($event)" />
+                  <small class="text-muted d-block mt-1">Uploading new files will replace existing media.</small>
+                  <div class="text-danger small mt-1" *ngIf="tooManyMedia()">Please add at most ten files.</div>
+                </div>
 
                 <div class="row g-3 mb-3" *ngIf="mediaPreviews().length">
                     <div class="col-md-4" *ngFor="let media of mediaPreviews(); let i = index">
@@ -72,7 +82,7 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
 
                   <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
 
-                  <button class="btn btn-primary" [disabled]="loading()" appDebounceClick>
+                  <button class="btn btn-primary" [disabled]="loading() || postForm.invalid || !hasSubjects() || tooManyMedia()" appDebounceClick>
                     {{ loading() ? 'Saving...' : 'Save Changes' }}
                   </button>
                 </form>
@@ -142,23 +152,24 @@ export class PostEditComponent implements OnDestroy {
     this.buildPreviews(files);
   }
 
-  submit(event: Event) {
+  submit(event: Event, form: any) {
     event.preventDefault();
     this.error.set('');
+    if (form?.invalid || !this.hasSubjects() || this.tooManyMedia()) {
+      form?.control?.markAllAsTouched?.();
+      if (!this.hasSubjects()) {
+        this.error.set('Please add at least one subject.');
+      } else if (this.tooManyMedia()) {
+        this.error.set('Please add at most ten Files.');
+      }
+      return;
+    }
     const id = this.postId();
     if (!id) return;
     const subjects = this.subjects()
       .split(',')
       .map(s => s.trim())
       .filter(Boolean);
-    if (!subjects.length) {
-      this.error.set('Please add at least one subject.');
-      return;
-    }
-    if (this.mediaFiles().length> 10) {
-      this.error.set('Please add at most ten Files.');
-      return;
-    }
 
     this.loading.set(true);
     this.postService.updatePost(id, {
@@ -191,6 +202,17 @@ export class PostEditComponent implements OnDestroy {
   private revokePreviews() {
     this.mediaPreviews().forEach((p) => URL.revokeObjectURL(p.url));
     this.mediaPreviews.set([]);
+  }
+
+  hasSubjects(): boolean {
+    return this.subjects()
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean).length > 0;
+  }
+
+  tooManyMedia(): boolean {
+    return this.mediaFiles().length > 10;
   }
 
   removeMedia(index: number) {

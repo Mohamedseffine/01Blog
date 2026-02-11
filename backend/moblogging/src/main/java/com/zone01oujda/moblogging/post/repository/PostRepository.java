@@ -14,6 +14,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     Page<Post> findByCreatorIdAndHiddenFalse(Long creatorId, Pageable pageable);
 
+    Page<Post> findByCreatorIdInAndHiddenFalse(java.util.Collection<Long> creatorIds, Pageable pageable);
+
     @Query("""
         SELECT p FROM Post p
         WHERE (:visibility IS NULL OR p.visibility = :visibility)

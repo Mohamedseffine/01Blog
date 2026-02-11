@@ -20,7 +20,7 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
               <h4 class="mb-0">Edit Profile</h4>
             </div>
             <div class="card-body">
-              <form (submit)="submit($event)">
+              <form #profileForm="ngForm" (submit)="submit($event, profileForm)" novalidate>
                 <div class="mb-3">
                   <label for="username" class="form-label">Username</label>
                   <input
@@ -30,8 +30,14 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                     name="username"
                     [ngModel]="username()"
                     (ngModelChange)="username.set($event)"
+                    #usernameCtrl="ngModel"
                     required
+                    minlength="3"
+                    maxlength="15"
                   />
+                  <div class="text-danger small mt-1" *ngIf="(profileForm.submitted || usernameCtrl.touched) && usernameCtrl.invalid">
+                    Username is required (3-15 characters).
+                  </div>
                 </div>
 
                 <div class="mb-3">
@@ -43,7 +49,12 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                     rows="4"
                     [ngModel]="bio()"
                     (ngModelChange)="bio.set($event)"
+                    #bioCtrl="ngModel"
+                    maxlength="280"
                   ></textarea>
+                  <div class="text-danger small mt-1" *ngIf="(profileForm.submitted || bioCtrl.touched) && bioCtrl.invalid">
+                    Bio must be 280 characters or fewer.
+                  </div>
                 </div>
 
                 <div class="mb-3">
@@ -60,7 +71,7 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                 <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
                 <div *ngIf="success()" class="alert alert-success">{{ success() }}</div>
 
-                <button type="submit" class="btn btn-primary" [disabled]="loading()" appDebounceClick>
+                <button type="submit" class="btn btn-primary" [disabled]="loading() || profileForm.invalid" appDebounceClick>
                   <span *ngIf="!loading()">Save changes</span>
                   <span *ngIf="loading()">Saving...</span>
                 </button>
@@ -104,10 +115,14 @@ export class EditProfileComponent {
     this.profilePicture.set(file);
   }
 
-  submit(event: Event) {
+  submit(event: Event, form: any) {
     event.preventDefault();
     this.error.set(null);
     this.success.set(null);
+    if (form?.invalid) {
+      form?.control?.markAllAsTouched?.();
+      return;
+    }
     const id = this.userId();
     if (!id) {
       this.error.set('Missing user id.');
@@ -116,7 +131,7 @@ export class EditProfileComponent {
     this.loading.set(true);
     this.userService.updateProfile({
       username: this.username().trim(),
-      bio: this.bio(),
+      bio: this.bio().trim(),
       profilePicture: this.profilePicture() || undefined
     }).subscribe({
       next: () => {

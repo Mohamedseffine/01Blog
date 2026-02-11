@@ -2,6 +2,7 @@ package com.zone01oujda.moblogging.comment.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ public class CreateCommentDto {
      * Comment content (required, non-empty)
      */
     @NotEmpty(message = "Comment content is required")
+    @Size(min = 1, max = 500, message = "Comment must be 1-500 characters")
     public String content;
 
     /**

@@ -64,22 +64,28 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
             </button>
             <div class="card mt-3" *ngIf="reportOpen()">
               <div class="card-body">
-                <form (submit)="submitReport($event, post.id)">
+                <form #reportForm="ngForm" (submit)="submitReport($event, post.id)" novalidate>
                   <div class="mb-3">
                     <label class="form-label">Reason</label>
-                    <select class="form-select" [ngModel]="reportReason()" (ngModelChange)="reportReason.set($event)" name="reason" required>
+                    <select class="form-select" [ngModel]="reportReason()" (ngModelChange)="reportReason.set($event)" name="reason" required #reportReasonCtrl="ngModel">
                       <option *ngFor="let reason of reportReasons" [ngValue]="reason">
                         {{ reason }}
                       </option>
                     </select>
+                    <div class="text-danger small mt-1" *ngIf="(reportForm.submitted || reportReasonCtrl.touched) && reportReasonCtrl.invalid">
+                      Please choose a reason.
+                    </div>
                   </div>
                   <div class="mb-3">
                     <label class="form-label">Details (optional)</label>
-                    <textarea class="form-control" rows="3" [ngModel]="reportDescription()" (ngModelChange)="reportDescription.set($event)" name="description"></textarea>
+                    <textarea class="form-control" rows="3" [ngModel]="reportDescription()" (ngModelChange)="reportDescription.set($event)" name="description" maxlength="500" #reportDescriptionCtrl="ngModel"></textarea>
+                    <div class="text-danger small mt-1" *ngIf="reportDescriptionCtrl.invalid">
+                      Details must be 500 characters or fewer.
+                    </div>
                   </div>
                   <div *ngIf="reportError()" class="alert alert-danger">{{ reportError() }}</div>
                   <div *ngIf="reportSuccess()" class="alert alert-success">{{ reportSuccess() }}</div>
-                  <button class="btn btn-sm btn-danger" [disabled]="reportLoading()" appDebounceClick>
+                  <button class="btn btn-sm btn-danger" [disabled]="reportLoading() || reportForm.invalid" appDebounceClick>
                     {{ reportLoading() ? 'Submitting...' : 'Submit Report' }}
                   </button>
                 </form>
@@ -95,7 +101,7 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
 
           <div class="mt-5">
             <h4 class="mb-3">Comments</h4>
-            <form class="mb-3" (submit)="submitComment($event, post.id)">
+            <form class="mb-3" #commentForm="ngForm" (submit)="submitComment($event, post.id)" novalidate>
               <textarea
                 class="form-control"
                 rows="3"
@@ -104,9 +110,15 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                 (ngModelChange)="commentText.set($event)"
                 name="comment"
                 required
+                minlength="1"
+                maxlength="500"
+                #commentCtrl="ngModel"
               ></textarea>
+              <div class="text-danger small mt-1" *ngIf="(commentForm.submitted || commentCtrl.touched) && commentCtrl.invalid">
+                Comment is required (max 500 characters).
+              </div>
               <div class="d-flex justify-content-end mt-2">
-                <button class="btn btn-sm btn-primary" [disabled]="commentLoading()" appDebounceClick>
+                <button class="btn btn-sm btn-primary" [disabled]="commentLoading() || commentForm.invalid" appDebounceClick>
                   {{ commentLoading() ? 'Posting...' : 'Post Comment' }}
                 </button>
               </div>
@@ -155,22 +167,28 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                   </button>
                   <div class="card mt-2" *ngIf="reportingCommentId() === c.id">
                     <div class="card-body">
-                      <form (submit)="submitCommentReport($event, c.id)">
+                      <form #commentReportForm="ngForm" (submit)="submitCommentReport($event, c.id)" novalidate>
                         <div class="mb-2">
                           <label class="form-label">Reason</label>
-                          <select class="form-select" [ngModel]="reportReason()" (ngModelChange)="reportReason.set($event)" name="commentReason" required>
+                          <select class="form-select" [ngModel]="reportReason()" (ngModelChange)="reportReason.set($event)" name="commentReason" required #commentReasonCtrl="ngModel">
                             <option *ngFor="let reason of reportReasons" [ngValue]="reason">
                               {{ reason }}
                             </option>
                           </select>
+                          <div class="text-danger small mt-1" *ngIf="(commentReportForm.submitted || commentReasonCtrl.touched) && commentReasonCtrl.invalid">
+                            Please choose a reason.
+                          </div>
                         </div>
                         <div class="mb-2">
                           <label class="form-label">Details (optional)</label>
-                          <textarea class="form-control" rows="2" [ngModel]="reportDescription()" (ngModelChange)="reportDescription.set($event)" name="commentDescription"></textarea>
+                          <textarea class="form-control" rows="2" [ngModel]="reportDescription()" (ngModelChange)="reportDescription.set($event)" name="commentDescription" maxlength="500" #commentDescriptionCtrl="ngModel"></textarea>
+                          <div class="text-danger small mt-1" *ngIf="commentDescriptionCtrl.invalid">
+                            Details must be 500 characters or fewer.
+                          </div>
                         </div>
                         <div *ngIf="reportError()" class="alert alert-danger">{{ reportError() }}</div>
                         <div *ngIf="reportSuccess()" class="alert alert-success">{{ reportSuccess() }}</div>
-                        <button class="btn btn-sm btn-danger" [disabled]="reportLoading()" appDebounceClick>
+                        <button class="btn btn-sm btn-danger" [disabled]="reportLoading() || commentReportForm.invalid" appDebounceClick>
                           {{ reportLoading() ? 'Submitting...' : 'Submit Report' }}
                         </button>
                       </form>
@@ -184,10 +202,16 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
                     [ngModel]="editCommentText()"
                     (ngModelChange)="editCommentText.set($event)"
                     name="editComment"
+                    [ngModelOptions]="{ standalone: true }"
+                    minlength="1"
+                    maxlength="500"
                   ></textarea>
+                  <div class="text-danger small mt-1" *ngIf="editCommentText().length > 500">
+                    Edited comment must be 500 characters or fewer.
+                  </div>
                   <div class="d-flex justify-content-end gap-2 mt-2">
                     <button class="btn btn-sm btn-outline-secondary" appDebounceClick (appDebounceClick)="cancelEdit()">Cancel</button>
-                    <button class="btn btn-sm btn-primary" appDebounceClick (appDebounceClick)="saveEditComment(c)">Save</button>
+                    <button class="btn btn-sm btn-primary" [disabled]="!editCommentText().trim() || editCommentText().length > 500" appDebounceClick (appDebounceClick)="saveEditComment(c)">Save</button>
                   </div>
                 </div>
                 <div class="ms-3 mt-2" *ngFor="let child of c.children || []">
@@ -361,8 +385,7 @@ export class PostDetailComponent {
   canManageComment(comment: Comment) {
     const user = this.authService.getCurrentUserSnapshot();
     if (!user) return false;
-    const isAdmin = user.roles?.includes('ADMIN') || user.roles?.includes('ROLE_ADMIN');
-    return isAdmin || user.username === comment.creatorUsername;
+    return user.username === comment.creatorUsername;
   }
 
   canReportPost() {
