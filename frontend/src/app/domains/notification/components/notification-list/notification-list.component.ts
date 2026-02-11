@@ -71,6 +71,18 @@ import { NotificationService } from '../../services/notification.service';
         <i class="bi bi-info-circle"></i>
         You're all caught up! No notifications to show.
       </div>
+
+      <div class="d-flex align-items-center justify-content-between mt-3" *ngIf="totalPages() > 1">
+        <button class="btn btn-outline-secondary btn-sm" (click)="prevPage()" [disabled]="page() === 0 || loading()">
+          Previous
+        </button>
+        <div class="small text-muted">
+          Page {{ page() + 1 }} of {{ totalPages() }} ({{ totalElements() }} total)
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" (click)="nextPage()" [disabled]="page() >= totalPages() - 1 || loading()">
+          Next
+        </button>
+      </div>
     </div>
   `,
   styles: [`
@@ -93,6 +105,10 @@ export class NotificationListComponent implements OnInit {
   loading = signal(false);
   error = signal('');
   filter = signal<'all' | 'unread' | 'mentions'>('all');
+  page = signal(0);
+  pageSize = signal(10);
+  totalPages = signal(0);
+  totalElements = signal(0);
 
   constructor(private notificationService: NotificationService) {}
 
@@ -106,9 +122,13 @@ export class NotificationListComponent implements OnInit {
   loadNotifications() {
     this.loading.set(true);
     this.error.set('');
-    this.notificationService.getNotifications().subscribe({
+    this.notificationService.getNotifications(this.page(), this.pageSize()).subscribe({
       next: (res) => {
         this.notifications.set(res?.content ?? []);
+        this.page.set(res?.number ?? 0);
+        this.pageSize.set(res?.size ?? this.pageSize());
+        this.totalPages.set(res?.totalPages ?? 0);
+        this.totalElements.set(res?.totalElements ?? 0);
         this.loading.set(false);
       },
       error: () => {
@@ -120,6 +140,20 @@ export class NotificationListComponent implements OnInit {
 
   setFilter(value: 'all' | 'unread' | 'mentions') {
     this.filter.set(value);
+  }
+
+  nextPage() {
+    if (this.page() < this.totalPages() - 1) {
+      this.page.update((p) => p + 1);
+      this.loadNotifications();
+    }
+  }
+
+  prevPage() {
+    if (this.page() > 0) {
+      this.page.update((p) => p - 1);
+      this.loadNotifications();
+    }
   }
 
   filteredNotifications() {

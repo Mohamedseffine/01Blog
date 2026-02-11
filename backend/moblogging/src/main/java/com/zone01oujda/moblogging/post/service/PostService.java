@@ -210,6 +210,7 @@ public class PostService {
         }
 
         if (dto.getMultipartFiles() != null && dto.getMultipartFiles().length > 0) {
+            deleteExistingMedia(post.getMediaUrl());
             String mediaUrls = uploadMediaFiles(dto.getMultipartFiles());
             post.setMediaUrl(mediaUrls);
         }
@@ -354,6 +355,46 @@ public class PostService {
         dto.setCreatorUsername(post.getCreator().getUsername());
         dto.setComments(comments);
         return dto;
+    }
+
+    private void deleteExistingMedia(String mediaUrl) {
+        if (mediaUrl == null || mediaUrl.isBlank()) {
+            return;
+        }
+        String[] paths = mediaUrl.split(",");
+        for (String stored : paths) {
+            Path resolved = resolveMediaPath(stored.trim());
+            if (resolved != null) {
+                try {
+                    fileUploadUtil.delete(resolved.toString());
+                } catch (RuntimeException ignored) {
+                    // Best-effort cleanup; continue deleting remaining files
+                }
+            }
+        }
+    }
+
+    private Path resolveMediaPath(String storedPath) {
+        if (storedPath == null || storedPath.isBlank()) {
+            return null;
+        }
+
+        String relative = storedPath.startsWith("/") ? storedPath.substring(1) : storedPath;
+        String normalizedBase = uploadDir.endsWith("/") ? uploadDir : uploadDir + "/";
+
+        Path filePath;
+        if (relative.startsWith(normalizedBase)) {
+            filePath = Paths.get(relative);
+        } else {
+            filePath = Paths.get(uploadDir, relative);
+        }
+
+        Path normalizedBasePath = Paths.get(uploadDir).normalize();
+        Path normalizedFile = filePath.normalize();
+        if (!normalizedFile.startsWith(normalizedBasePath)) {
+            return null;
+        }
+        return normalizedFile;
     }
 
     private String trimToNull(String value) {

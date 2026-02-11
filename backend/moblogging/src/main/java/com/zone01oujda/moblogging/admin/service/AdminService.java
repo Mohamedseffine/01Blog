@@ -253,6 +253,8 @@ public class AdminService {
             throw new AccessDeniedException("You cannot delete your own account");
         }
         refreshTokenRepository.deleteByUserId(target.getId());
+        reportRepository.deleteByReporterId(target.getId());
+        reportRepository.deleteByReportedUserId(target.getId());
         // Reports, comments, posts, etc. are set to cascade/orphan removal; repo delete will cascade.
         userRepository.delete(target);
     }

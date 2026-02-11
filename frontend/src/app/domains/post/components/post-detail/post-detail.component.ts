@@ -99,6 +99,19 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
           </div>
           <div class="lead post-content text-wrap-anywhere">{{ post.postContent }}</div>
 
+          <div class="mt-4" *ngIf="media$ | async as media">
+            <div class="row g-3">
+              <div class="col-md-6" *ngFor="let item of media">
+                <ng-container *ngIf="item.type.startsWith('video'); else imageTpl">
+                  <video class="w-100 rounded shadow-sm" controls [src]="item.url"></video>
+                </ng-container>
+                <ng-template #imageTpl>
+                  <img class="img-fluid rounded shadow-sm" [src]="item.url" alt="Post media" />
+                </ng-template>
+              </div>
+            </div>
+          </div>
+
           <div class="mt-5">
             <h4 class="mb-3">Comments</h4>
             <form class="mb-3" #commentForm="ngForm" (submit)="submitComment($event, post.id)" novalidate>
@@ -222,18 +235,6 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
             </div>
           </div>
 
-          <div class="mt-4" *ngIf="media$ | async as media">
-            <div class="row g-3">
-              <div class="col-md-6" *ngFor="let item of media">
-                <ng-container *ngIf="item.type.startsWith('video'); else imageTpl">
-                  <video class="w-100 rounded shadow-sm" controls [src]="item.url"></video>
-                </ng-container>
-                <ng-template #imageTpl>
-                  <img class="img-fluid rounded shadow-sm" [src]="item.url" alt="Post media" />
-                </ng-template>
-              </div>
-            </div>
-          </div>
         </ng-container>
       </ng-container>
 

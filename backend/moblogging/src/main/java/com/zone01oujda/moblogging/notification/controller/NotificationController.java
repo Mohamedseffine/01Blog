@@ -17,7 +17,7 @@ import com.zone01oujda.moblogging.util.response.ApiResponse;
 
 /**
  * REST controller for notification operations
- * Handles HTTP requests for notification management
+ * Handles HTTP requests for notification management    
  */
 @RestController
 @RequestMapping("/notifications")

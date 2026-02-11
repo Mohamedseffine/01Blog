@@ -11,4 +11,8 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     void deleteByPostId(Long postId);
 
     void deleteByCommentId(Long commentId);
+
+    void deleteByReporterId(Long userId);
+
+    void deleteByReportedUserId(Long userId);
 }

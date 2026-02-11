@@ -40,7 +40,7 @@ import { ErrorService, AppError } from '@core/services/error.service';
       position: fixed;
       top: 96px;
       right: 20px;
-      z-index: 9999;
+      z-index: 20000;
       max-width: 400px;
       display: flex;
       flex-direction: column;
