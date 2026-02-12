@@ -186,8 +186,7 @@ public class PostService {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
 
-        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
-        if (!isAdmin && (post.getCreator() == null || !username.equals(post.getCreator().getUsername()))) {
+        if (post.getCreator() == null || !username.equals(post.getCreator().getUsername())) {
             throw new AccessDeniedException("You cannot update this post");
         }
 
@@ -229,8 +228,7 @@ public class PostService {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
 
-        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
-        if (!isAdmin && (post.getCreator() == null || !username.equals(post.getCreator().getUsername()))) {
+        if (post.getCreator() == null || !username.equals(post.getCreator().getUsername())) {
             throw new AccessDeniedException("You cannot delete this post");
         }
 

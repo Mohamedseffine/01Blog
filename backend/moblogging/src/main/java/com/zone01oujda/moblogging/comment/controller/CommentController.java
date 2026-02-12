@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.zone01oujda.moblogging.comment.dto.CommentDto;
 import com.zone01oujda.moblogging.comment.dto.CreateCommentDto;
+import com.zone01oujda.moblogging.comment.dto.UpdateCommentDto;
 import com.zone01oujda.moblogging.comment.service.CommentService;
 import com.zone01oujda.moblogging.util.response.ApiResponse;
 
@@ -58,7 +59,7 @@ public class CommentController {
     @PutMapping("/{commentId}")
     public ResponseEntity<ApiResponse<CommentDto>> updateComment(
             @PathVariable("commentId") Long commentId,
-            @Valid @RequestBody CreateCommentDto updateDto) {
+            @Valid @RequestBody UpdateCommentDto updateDto) {
         CommentDto comment = commentService.updateComment(commentId, updateDto.content);
         return ResponseEntity.ok(new ApiResponse<>(true, "Comment updated successfully", comment));
     }

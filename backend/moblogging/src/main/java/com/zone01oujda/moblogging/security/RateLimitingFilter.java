@@ -64,7 +64,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         if (key.contains(":auth:register")) {
             return Bandwidth.classic(3, Refill.intervally(3, Duration.ofMinutes(1)));
         }
-        if (key.contains(":auth:refresh") || key.contains(":auth:logout")) {
+        if (key.contains(":auth:logout")) {
             return Bandwidth.classic(10, Refill.intervally(10, Duration.ofMinutes(1)));
         }
         return Bandwidth.classic(100, Refill.intervally(100, Duration.ofMinutes(1)));
@@ -77,8 +77,6 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             bucketName = "auth:login";
         } else if (path.startsWith("/auth/register")) {
             bucketName = "auth:register";
-        } else if (path.startsWith("/auth/refresh")) {
-            bucketName = "auth:refresh";
         } else if (path.startsWith("/auth/logout")) {
             bucketName = "auth:logout";
         }

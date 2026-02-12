@@ -8,7 +8,7 @@ import { Post } from '../../models/post.model';
   selector: 'app-post-list',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  template: `
+  template: /*html*/ `
     <div class="post-list">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Posts</h1>

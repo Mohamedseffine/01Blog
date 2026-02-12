@@ -28,3 +28,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("creatorId") Long creatorId,
             Pageable pageable);
 }
+
+
+

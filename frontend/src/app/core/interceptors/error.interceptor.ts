@@ -1,12 +1,12 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError, switchMap, of, take } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { ErrorService } from '@core/services/error.service';
 
 /**
- * HTTP Interceptor for global error handling with automatic token refresh
+ * HTTP Interceptor for global error handling
  * Provides centralized error handling and user-friendly error messages
  */
 export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
@@ -16,93 +16,28 @@ export const errorInterceptor: HttpInterceptorFn = (req: any, next: any) => {
   
   const isAuthRequest = req.url.includes('/auth/login')
     || req.url.includes('/auth/register')
-    || req.url.includes('/auth/refresh')
     || req.url.includes('/auth/logout');
   const isAuthMe = req.url.includes('/auth/me');
 
   return next(req).pipe(
     catchError((error: any) => {
-      // If /auth/me fails, try one refresh before treating it as logout
+      // If /auth/me fails, treat as unauthenticated
       if ((error.status === 401 || error.status === 403) && isAuthMe) {
-        if (req.headers.has('X-Retry-Me')) {
-          auth.clearToken();
-          router.navigate(['/auth/login']);
-          errorService.addError('Your session has expired. Please log in again.');
-          return throwError(() => error);
-        }
-
-        return auth.refresh().pipe(
-          take(1),
-          switchMap((res: any) => {
-            const access = res?.data?.accessToken;
-            if (access) {
-              auth.setToken(access);
-              const cloned = req.clone({
-                setHeaders: {
-                  Authorization: `Bearer ${access}`,
-                  'X-Retry-Me': '1'
-                }
-              });
-              return next(cloned);
-            }
-            auth.clearToken();
-            router.navigate(['/auth/login']);
-            errorService.addError('Your session has expired. Please log in again.');
-            return throwError(() => error);
-          }),
-          catchError((refreshError) => {
-            auth.clearToken();
-            router.navigate(['/auth/login']);
-            errorService.addError('Authentication failed. Please log in again.');
-            return throwError(() => refreshError);
-          })
-        );
+        auth.clearToken();
+        router.navigate(['/auth/login']);
+        errorService.addError('Your session has expired. Please log in again.');
+        return throwError(() => error);
       }
 
-      // Handle 401 Unauthorized - Try to refresh token (but not for auth requests to prevent infinite loop)
+      // Handle 401 Unauthorized for protected routes
       if (error.status === 401 && !isAuthRequest) {
-        const currentToken = auth.getToken();
-        
-        // If there's no token, don't try to refresh - just logout
-        if (!currentToken) {
-          auth.logout().subscribe({ error: () => undefined });
-          router.navigate(['/auth/login']);
-          errorService.addError('Please log in to continue.');
-          return throwError(() => error);
-        }
-        
-        // Check if we already tried to refresh to prevent infinite loop
-        if (req.headers.has('X-Retry-Refresh')) {
-          auth.clearToken();
-          router.navigate(['/auth/login']);
-          errorService.addError('Your session has expired. Please log in again.');
-          return throwError(() => error);
-        }
-
-        return auth.refresh().pipe(
-          take(1),
-          switchMap((res: any) => {
-            const access = res?.data?.accessToken;
-            if (access) {
-              auth.setToken(access);
-              // Retry original request with new token
-              const cloned = req.clone({ setHeaders: { Authorization: `Bearer ${access}` } });
-              return next(cloned);
-            }
-            // Refresh didn't return token - clear auth and redirect
-            auth.clearToken();
-            router.navigate(['/auth/login']);
-            errorService.addError('Your session has expired. Please log in again.');
-            return throwError(() => error);
-          }),
-          catchError((refreshError) => {
-            // If refresh fails, clear auth and redirect
-            auth.clearToken();
-            router.navigate(['/auth/login']);
-            errorService.addError('Authentication failed. Please log in again.');
-            return throwError(() => refreshError);
-          })
-        );
+        const hadToken = !!auth.getToken();
+        auth.clearToken();
+        router.navigate(['/auth/login']);
+        errorService.addError(hadToken
+          ? 'Your session has expired. Please log in again.'
+          : 'Please log in to continue.');
+        return throwError(() => error);
       }
       
       // Handle 403 Forbidden - especially on /auth/me, treat as 401

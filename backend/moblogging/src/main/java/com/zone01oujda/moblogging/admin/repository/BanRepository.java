@@ -8,4 +8,5 @@ import com.zone01oujda.moblogging.entity.Ban;
 
 public interface BanRepository extends JpaRepository<Ban, Long> {
     Optional<Ban> findTopByUserIdOrderByCreatedAtDesc(Long userId);
+    void deleteByUserId(Long userId);
 }

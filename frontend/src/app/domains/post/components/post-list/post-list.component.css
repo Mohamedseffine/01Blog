@@ -1,2 +1,7 @@
 /* Bootstrap only - CSS */
-
+.subject-badge {
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}

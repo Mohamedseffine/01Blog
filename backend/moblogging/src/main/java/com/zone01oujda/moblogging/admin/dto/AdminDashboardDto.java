@@ -14,4 +14,6 @@ public class AdminDashboardDto {
     private long totalReports;
     private long bannedUsers;
     private long pendingReports;
+
+
 }

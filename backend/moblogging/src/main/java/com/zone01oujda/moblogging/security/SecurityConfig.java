@@ -32,7 +32,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS).permitAll()
                         .requestMatchers("/auth/register",
                                 "/auth/login",
-                                "/auth/refresh",
                                 "/auth/logout",
                                 "/ws/**",
                                 "/error")

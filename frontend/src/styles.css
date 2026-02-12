@@ -160,6 +160,14 @@ a:focus {
   white-space: pre-wrap;
 }
 
+.subject-badge {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .navbar {
   margin: 1.25rem 0;
   background:

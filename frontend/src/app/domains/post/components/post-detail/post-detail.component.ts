@@ -379,8 +379,7 @@ export class PostDetailComponent {
   canManagePost(post: any) {
     const user = this.authService.getCurrentUserSnapshot();
     if (!user) return false;
-    const isAdmin = user.roles?.includes('ADMIN') || user.roles?.includes('ROLE_ADMIN');
-    return isAdmin || user.username === post.creatorUsername;
+    return user.username === post.creatorUsername;
   }
 
   canManageComment(comment: Comment) {

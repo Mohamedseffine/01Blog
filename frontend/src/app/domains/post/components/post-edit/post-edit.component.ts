@@ -7,6 +7,7 @@ import { PostVisibility } from '../../models/post.model';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { ErrorService } from '@core/services/error.service';
 import { DebounceClickDirective } from '@shared/directives/debounce-click.directive';
+import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-post-edit',
@@ -15,81 +16,86 @@ import { DebounceClickDirective } from '@shared/directives/debounce-click.direct
   template: `
     <div class="container py-4">
       <ng-container *ngIf="loaded()">
-        <div class="row justify-content-center">
-          <div class="col-lg-8">
-            <div class="card shadow-sm">
-              <div class="card-header bg-dark text-white">Edit Post</div>
-              <div class="card-body">
-                <form #postForm="ngForm" (submit)="submit($event, postForm)" novalidate>
-                  <div class="mb-3">
-                    <label class="form-label">Title</label>
-                    <input class="form-control" name="title" [ngModel]="title()" (ngModelChange)="title.set($event)" required minlength="3" maxlength="120" #titleCtrl="ngModel" />
-                    <div class="text-danger small mt-1" *ngIf="(postForm.submitted || titleCtrl.touched) && titleCtrl.invalid">
-                      Title is required (3-120 characters).
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label">Content</label>
-                    <textarea class="form-control" name="content" rows="6" [ngModel]="content()" (ngModelChange)="content.set($event)" required minlength="10" maxlength="5000" #contentCtrl="ngModel"></textarea>
-                    <div class="text-danger small mt-1" *ngIf="(postForm.submitted || contentCtrl.touched) && contentCtrl.invalid">
-                      Content is required (10-5000 characters).
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label">Subjects (comma separated)</label>
-                    <input class="form-control" name="subjects" [ngModel]="subjects()" (ngModelChange)="subjects.set($event)" required minlength="3" maxlength="180" #subjectsCtrl="ngModel" />
-                    <div class="text-danger small mt-1" *ngIf="(postForm.submitted || subjectsCtrl.touched) && (!hasSubjects() || subjectsCtrl.invalid)">
-                      Enter at least one subject (comma separated, min 3 characters total).
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label">Visibility</label>
-                    <select class="form-select" name="visibility" [ngModel]="visibility()" (ngModelChange)="visibility.set($event)" required>
-                      <option [ngValue]="PostVisibility.PUBLIC">Public</option>
-                      <option [ngValue]="PostVisibility.PRIVATE">Private</option>
-                      <option [ngValue]="PostVisibility.CLOSEFRIEND">Close Friends</option>
-                    </select>
-                  </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Replace Media (optional)</label>
-                  <input type="file" class="form-control" multiple accept="image/*,video/*" (change)="onFilesChange($event)" />
-                  <small class="text-muted d-block mt-1">Uploading new files will replace existing media.</small>
-                  <div class="text-danger small mt-1" *ngIf="tooManyMedia()">Please add at most ten files.</div>
-                </div>
-
-                <div class="row g-3 mb-3" *ngIf="mediaPreviews().length">
-                    <div class="col-md-4" *ngFor="let media of mediaPreviews(); let i = index">
-                      <div class="ratio ratio-4x3 rounded overflow-hidden shadow-sm position-relative">
-                        <ng-container *ngIf="media.type.startsWith('video'); else imageTpl">
-                          <video class="w-100 h-100" [src]="media.url" controls></video>
-                        </ng-container>
-                        <ng-template #imageTpl>
-                          <img class="img-fluid w-100 h-100 object-fit-cover" [src]="media.url" alt="Preview" />
-                        </ng-template>
-                        <button
-                          type="button"
-                          class="btn-close position-absolute top-0 end-0 m-1 bg-light rounded-circle p-2 shadow-sm"
-                          aria-label="Remove media"
-                          (click)="removeMedia(i)"
-                        ></button>
+        <ng-container *ngIf="canEdit(); else notAllowed">
+          <div class="row justify-content-center">
+            <div class="col-lg-8">
+              <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">Edit Post</div>
+                <div class="card-body">
+                  <form #postForm="ngForm" (submit)="submit($event, postForm)" novalidate>
+                    <div class="mb-3">
+                      <label class="form-label">Title</label>
+                      <input class="form-control" name="title" [ngModel]="title()" (ngModelChange)="title.set($event)" required minlength="3" maxlength="120" #titleCtrl="ngModel" />
+                      <div class="text-danger small mt-1" *ngIf="(postForm.submitted || titleCtrl.touched) && titleCtrl.invalid">
+                        Title is required (3-120 characters).
                       </div>
                     </div>
-                  </div>
 
-                  <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
+                    <div class="mb-3">
+                      <label class="form-label">Content</label>
+                      <textarea class="form-control" name="content" rows="6" [ngModel]="content()" (ngModelChange)="content.set($event)" required minlength="10" maxlength="5000" #contentCtrl="ngModel"></textarea>
+                      <div class="text-danger small mt-1" *ngIf="(postForm.submitted || contentCtrl.touched) && contentCtrl.invalid">
+                        Content is required (10-5000 characters).
+                      </div>
+                    </div>
 
-                  <button class="btn btn-primary" [disabled]="loading() || postForm.invalid || !hasSubjects() || tooManyMedia()" appDebounceClick>
-                    {{ loading() ? 'Saving...' : 'Save Changes' }}
-                  </button>
-                </form>
+                    <div class="mb-3">
+                      <label class="form-label">Subjects (comma separated)</label>
+                      <input class="form-control" name="subjects" [ngModel]="subjects()" (ngModelChange)="subjects.set($event)" required minlength="3" maxlength="180" #subjectsCtrl="ngModel" />
+                      <div class="text-danger small mt-1" *ngIf="(postForm.submitted || subjectsCtrl.touched) && (!hasSubjects() || subjectsCtrl.invalid)">
+                        Enter at least one subject (comma separated, min 3 characters total).
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Visibility</label>
+                      <select class="form-select" name="visibility" [ngModel]="visibility()" (ngModelChange)="visibility.set($event)" required>
+                        <option [ngValue]="PostVisibility.PUBLIC">Public</option>
+                        <option [ngValue]="PostVisibility.PRIVATE">Private</option>
+                        <option [ngValue]="PostVisibility.CLOSEFRIEND">Close Friends</option>
+                      </select>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Replace Media (optional)</label>
+                      <input type="file" class="form-control" multiple accept="image/*,video/*" (change)="onFilesChange($event)" />
+                      <small class="text-muted d-block mt-1">Uploading new files will replace existing media.</small>
+                      <div class="text-danger small mt-1" *ngIf="tooManyMedia()">Please add at most ten files.</div>
+                    </div>
+
+                    <div class="row g-3 mb-3" *ngIf="mediaPreviews().length">
+                      <div class="col-md-4" *ngFor="let media of mediaPreviews(); let i = index">
+                        <div class="ratio ratio-4x3 rounded overflow-hidden shadow-sm position-relative">
+                          <ng-container *ngIf="media.type.startsWith('video'); else imageTpl">
+                            <video class="w-100 h-100" [src]="media.url" controls></video>
+                          </ng-container>
+                          <ng-template #imageTpl>
+                            <img class="img-fluid w-100 h-100 object-fit-cover" [src]="media.url" alt="Preview" />
+                          </ng-template>
+                          <button
+                            type="button"
+                            class="btn-close position-absolute top-0 end-0 m-1 bg-light rounded-circle p-2 shadow-sm"
+                            aria-label="Remove media"
+                            (click)="removeMedia(i)"
+                          ></button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
+
+                    <button class="btn btn-primary" [disabled]="loading() || postForm.invalid || !hasSubjects() || tooManyMedia()" appDebounceClick>
+                      {{ loading() ? 'Saving...' : 'Save Changes' }}
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </ng-container>
+        <ng-template #notAllowed>
+          <div class="alert alert-danger">{{ error() || 'You do not have permission to edit this post.' }}</div>
+        </ng-template>
       </ng-container>
 
       <div *ngIf="!loaded()" class="text-muted">Loading post...</div>
@@ -108,12 +114,14 @@ export class PostEditComponent implements OnDestroy {
   error = signal('');
   loaded = signal(false);
   postId = signal<number | null>(null);
+  canEdit = signal(false);
 
   constructor(
     private route: ActivatedRoute,
     private postService: PostService,
     private router: Router,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private authService: AuthService
   ) {
     this.route.paramMap.pipe(
       map(params => Number(params.get('id'))),
@@ -132,10 +140,17 @@ export class PostEditComponent implements OnDestroy {
       })
     ).subscribe((post) => {
       if (post) {
-        this.title.set(post.postTitle || '');
-        this.content.set(post.postContent || '');
-        this.subjects.set((post.postSubject || []).join(', '));
-        this.visibility.set(post.postVisibility || PostVisibility.PUBLIC);
+        const current = this.authService.getCurrentUserSnapshot();
+        if (!current || current.username !== post.creatorUsername) {
+          this.error.set('You do not have permission to edit this post.');
+          this.canEdit.set(false);
+        } else {
+          this.canEdit.set(true);
+          this.title.set(post.postTitle || '');
+          this.content.set(post.postContent || '');
+          this.subjects.set((post.postSubject || []).join(', '));
+          this.visibility.set(post.postVisibility || PostVisibility.PUBLIC);
+        }
       }
       this.loaded.set(true);
     });
@@ -155,6 +170,10 @@ export class PostEditComponent implements OnDestroy {
   submit(event: Event, form: any) {
     event.preventDefault();
     this.error.set('');
+    if (!this.canEdit()) {
+      this.error.set('You do not have permission to edit this post.');
+      return;
+    }
     if (form?.invalid || !this.hasSubjects() || this.tooManyMedia()) {
       form?.control?.markAllAsTouched?.();
       if (!this.hasSubjects()) {

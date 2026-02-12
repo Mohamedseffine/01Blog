@@ -39,37 +39,34 @@ Full-stack blogging platform with posts, comments, reactions, follows, notificat
    - Runs at `http://localhost:4200`, expects backend at `http://localhost:8080` (`environment.ts`).
 
 ## Core Features
-- Authentication with JWT, refresh, and rate limits on auth endpoints.
+- Authentication with JWT access tokens and rate limits on auth endpoints.
 - Posts with media, visibility (public/private/close friends), subjects, edit/delete.
 - Comments with nesting, edit/delete by owners; reactions on posts and comments.
 - Follow/unfollow, user profiles with post lists, profile editing and uploads.
 - Reporting of posts/comments/users; admins resolve/delete; resolved/deleted content clears related reports.
-- Notifications (real-time via WebSocket), saved posts, bans (blocked at login, refresh, and request time).
+- Notifications (real-time via WebSocket), saved posts, bans (blocked at login and request time).
 - Admin dashboard for users, posts, comments, reports, bans, hide/unhide, delete.
 
 ## Important Behaviors
-- **Rate limiting:** IP + endpoint buckets (login, register, refresh/logout, default). 429 returned on excess.
-- **Bans:** Banned users cannot log in, refresh tokens, or access endpoints (JWT filter returns 403).
+- **Rate limiting:** IP + endpoint buckets (login, register, logout, default). 429 returned on excess.
+- **Bans:** Banned users cannot log in or access endpoints (JWT filter returns 403).
 - **Reports cleanup:** Resolving a report removes it; deleting a post/comment also removes related reports.
 - **Error handling:** Global error handler/interceptors; success interceptor toasts for non-GET successes.
 - **Debounced actions:** Critical buttons (forms, reactions, reports, admin actions) are debounced to prevent double submissions.
 
 ## Configuration Details
-- **Backend env/properties:** DB (`spring.datasource.*`), `files.uploadDirectory`, JWT (`jwt.secret`, `jwt.expiration`, `jwt.refresh-expiration`), admin seed (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, names/gender/profile-type).
-- **Rate limits (per IP):** `/auth/login` 5/min, `/auth/register` 3/min, `/auth/refresh` + `/auth/logout` 10/min, default 100/min (Bucket4j).
+- **Backend env/properties:** DB (`spring.datasource.*`), `files.uploadDirectory`, JWT (`jwt.secret`, `jwt.expiration`), admin seed (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, names/gender/profile-type).
+- **Rate limits (per IP):** `/auth/login` 5/min, `/auth/register` 3/min, `/auth/logout` 10/min, default 100/min (Bucket4j).
 - **Media uploads:** Multipart on; 50MB/file, 60MB/request, max 20 parts, stored under `uploads/` by default.
 - **WebSocket:** STOMP over `/ws`; notifications start after login with the access token.
-- **Roles & bans:** Admin vs user. Banned users are blocked on login, refresh, and every JWT-auth’d request (403).
+- **Roles & bans:** Admin vs user. Banned users are blocked on login and every JWT-auth’d request (403).
 
 ## Usage Notes
-- **Auth flow:** Login issues access + refresh; refresh rotates tokens and verifies stored hash/expiry/revocation.
+- **Auth flow:** Login issues an access token; clients re-authenticate when the token expires.
 - **Reports:** Users report posts/comments/users; admins resolve (removes report) or delete content (also removes related reports) from the reports panel.
 - **Visibility & moderation:** Posts can be public/private/close-friends; hide/unhide via admin; owners edit/delete their own posts/comments; admins can delete but not edit others’ comments.
 - **Friction control:** Debounced mutation buttons to avoid double submissions; global success/error toasts keep UX responsive.
 
-## Running Tests / Lint
-- Backend build: `cd backend/moblogging && ./mvnw -DskipTests package`
-- Frontend lint: `cd frontend && npm run lint` (may require adjusting existing lint issues).
 
 ## Project Structure (high level)
 - `frontend/src/app/domains/*` — feature areas (auth, post, comment, user, admin, report, react, notification).
@@ -86,5 +83,5 @@ Full-stack blogging platform with posts, comments, reactions, follows, notificat
 
 ## Deployment Notes
 - Configure database credentials and `files.uploadDirectory` for persistent storage.
-- Set `jwt.secret`, `jwt.expiration`, `jwt.refresh-expiration` appropriately.
+- Set `jwt.secret` and `jwt.expiration` appropriately.
 - Serve frontend with your preferred host (e.g., `ng build --configuration production` and static hosting).

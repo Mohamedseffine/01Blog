@@ -27,9 +27,6 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration}")
     private Long jwtAccessExpiration;
 
-    @Value("${jwt.refresh-expiration}")
-    private Long jwtRefreshExpiration;
-
     private SecretKey secretKey ;
 
     @PostConstruct
@@ -51,15 +48,6 @@ public class JwtTokenProvider {
         .setExpiration(new Date(System.currentTimeMillis() + jwtAccessExpiration))
         .signWith(secretKey, SignatureAlgorithm.HS256)
         .compact();
-    }
-
-    public String generateRefreshToken(User user) {
-        return Jwts.builder()
-            .setSubject(user.getUsername())
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + jwtRefreshExpiration))
-            .signWith(secretKey, SignatureAlgorithm.HS256)
-            .compact();
     }
 
     public boolean validateToken(String token) {
@@ -102,10 +90,6 @@ public class JwtTokenProvider {
             }
         }
         return null;
-    }
-
-    public long getRefreshExpirationSeconds() {
-        return jwtRefreshExpiration / 1000L;
     }
 
 }

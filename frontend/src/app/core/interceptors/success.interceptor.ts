@@ -5,7 +5,7 @@ import { ErrorService } from '@core/services/error.service';
 
 /**
  * Success interceptor: shows a toast for non-GET successful requests
- * Skips auth/refresh and limits to user-facing mutations.
+ * Skips auth endpoints and limits to user-facing mutations.
  */
 export const successInterceptor: HttpInterceptorFn = (req, next) => {
   const errorService = inject(ErrorService);
@@ -16,7 +16,6 @@ export const successInterceptor: HttpInterceptorFn = (req, next) => {
   const isAuthEndpoint =
     url.includes('/auth/login') ||
     url.includes('/auth/register') ||
-    url.includes('/auth/refresh') ||
     url.includes('/auth/logout');
 
   if (isReadOnly || isAuthEndpoint) {

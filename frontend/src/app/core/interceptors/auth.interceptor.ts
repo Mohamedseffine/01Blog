@@ -9,7 +9,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
 
   const token = authService.getToken();
-  const skipAuthEndpoints = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout', '/auth/me'];
+  const skipAuthEndpoints = ['/auth/login', '/auth/register', '/auth/logout'];
+  const errorSkipEndpoints = [...skipAuthEndpoints, '/auth/me'];
   const isSkipAuth = skipAuthEndpoints.some(e => req.url.includes(e));
 
   if (token && !isSkipAuth) {
@@ -20,7 +21,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError(err => {
-      const isAuthEndpoint = skipAuthEndpoints.some(e => req.url.includes(e));
+      const isAuthEndpoint = errorSkipEndpoints.some(e => req.url.includes(e));
       if ((err.status === 401 || err.status === 403) && !isAuthEndpoint) {
         authService.clearToken();
         router.navigate(['/auth/login']);

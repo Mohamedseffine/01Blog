@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, map, tap, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, map, tap } from 'rxjs';
 import { environment } from '@env/environment';
 import { CurrentUser } from '@domains/auth/models/auth.model';
 
@@ -52,10 +52,6 @@ export class AuthService {
     return this.http.post(`${this.base}/register`, formData, { withCredentials: true });
   }
 
-  refresh(): Observable<any> {
-    return this.http.post(`${this.base}/refresh`, {}, { withCredentials: true });
-  }
-
   getCurrentUser(): Observable<CurrentUser> {
     const token = this.getToken();
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
@@ -100,11 +96,11 @@ export class AuthService {
 
     this.refreshCurrentUser().subscribe({
       next: (user) => {
-        // Successfully loaded
       },
       error: (err) => {
-        // If getting current user fails, clear the token
-        this.clearToken();
+        if (err?.status === 401 || err?.status === 403) {
+          this.clearToken();
+        }
       }
     });
   }

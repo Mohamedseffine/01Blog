@@ -32,23 +32,13 @@ public class AdminController {
     public AdminController(AdminService adminService) {
         this.adminService = adminService;
     }
-
+    
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse<AdminDashboardDto>> getDashboard() {
         return ResponseEntity.ok(
             new ApiResponse<>(true, "Dashboard data retrieved successfully", adminService.getDashboardStats())
         );
     }
-
-    @GetMapping("/users")
-    public ResponseEntity<ApiResponse<Page<AdminUserDto>>> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(
-            new ApiResponse<>(true, "Users retrieved successfully", adminService.getAllUsers(page, size))
-        );
-    }
-
     @GetMapping("/posts")
     public ResponseEntity<ApiResponse<Page<AdminPostDto>>> getAllPosts(
             @RequestParam(defaultValue = "0") int page,
@@ -76,6 +66,15 @@ public class AdminController {
         return ResponseEntity.ok(
             new ApiResponse<>(true, "Comments retrieved successfully",
                 adminService.getAllComments(page, size, sortDir, hidden, postId, creatorId, creatorUsername))
+        );
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<Page<AdminUserDto>>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(
+            new ApiResponse<>(true, "Users retrieved successfully", adminService.getAllUsers(page, size))
         );
     }
 

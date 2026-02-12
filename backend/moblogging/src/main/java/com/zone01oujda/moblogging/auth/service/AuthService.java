@@ -1,11 +1,5 @@
 package com.zone01oujda.moblogging.auth.service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
-import java.util.Base64;
-
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,8 +10,6 @@ import org.springframework.stereotype.Service;
 import com.zone01oujda.moblogging.auth.dto.AuthTokensDto;
 import com.zone01oujda.moblogging.auth.dto.LoginRequestDto;
 import com.zone01oujda.moblogging.auth.dto.RegisterRequestDto;
-import com.zone01oujda.moblogging.auth.repository.RefreshTokenRepository;
-import com.zone01oujda.moblogging.entity.RefreshToken;
 import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.exception.BadRequestException;
 import com.zone01oujda.moblogging.exception.ConflictException;
@@ -36,18 +28,16 @@ public class AuthService {
     private static final int MAX_PASSWORD_LENGTH = 72;
 
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final FileUploadUtil fileUploadUtil;
 
-    public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
-            PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
-            JwtTokenProvider tokenProvider, FileUploadUtil fileUploadUtil) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+            AuthenticationManager authenticationManager, JwtTokenProvider tokenProvider,
+            FileUploadUtil fileUploadUtil) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
         this.tokenProvider = tokenProvider;
         this.passwordEncoder = passwordEncoder;
         this.fileUploadUtil = fileUploadUtil;
@@ -155,56 +145,6 @@ public class AuthService {
         return userRepository.findByUsernameOrEmail(username).orElse(null);
     }
 
-    public AuthTokensDto refreshTokens(String refreshToken) {
-        if (!tokenProvider.validateToken(refreshToken)) {
-            throw new BadRequestException("Invalid refresh token");
-        }
-
-        String username = tokenProvider.getUsername(refreshToken);
-        User user = userRepository.findByUsernameOrEmail(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        if (user.isBanned()) {
-            throw new BadRequestException("Your account is banned. Please contact support.");
-        }
-
-        RefreshToken stored = refreshTokenRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
-                .orElseThrow(() -> new BadRequestException("Refresh token not found"));
-
-        if (stored.getRevokedAt() != null) {
-            throw new BadRequestException("Refresh token revoked");
-        }
-
-        if (stored.getExpiresAt() != null && stored.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("Refresh token expired");
-        }
-
-        if (!sha256Base64(refreshToken).equals(stored.getTokenHash())) {
-            throw new BadRequestException("Invalid refresh token");
-        }
-
-        return rotateTokens(user, stored);
-    }
-
-    public void revokeRefreshToken(String refreshToken) {
-        if (refreshToken == null || refreshToken.isBlank()) {
-            return;
-        }
-        if (!tokenProvider.validateToken(refreshToken)) {
-            return;
-        }
-        String username = tokenProvider.getUsername(refreshToken);
-        User user = userRepository.findByUsernameOrEmail(username).orElse(null);
-        if (user == null) {
-            return;
-        }
-        refreshTokenRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
-                .ifPresent(token -> {
-                    token.setRevokedAt(LocalDateTime.now());
-                    refreshTokenRepository.save(token);
-                });
-    }
-
     private String trimToNull(String value) {
         if (value == null) return null;
         String trimmed = value.trim();
@@ -213,38 +153,7 @@ public class AuthService {
 
     private AuthTokensDto issueTokens(User user) {
         String access = tokenProvider.generateAccesToken(user);
-        String refresh = tokenProvider.generateRefreshToken(user);
-        upsertRefreshToken(user, refresh);
-        return new AuthTokensDto(access, refresh);
-    }
-
-    private AuthTokensDto rotateTokens(User user, RefreshToken stored) {
-        String access = tokenProvider.generateAccesToken(user);
-        String refresh = tokenProvider.generateRefreshToken(user);
-        stored.setTokenHash(sha256Base64(refresh));
-        stored.setExpiresAt(LocalDateTime.now().plusSeconds(tokenProvider.getRefreshExpirationSeconds()));
-        stored.setRevokedAt(null);
-        refreshTokenRepository.save(stored);
-        return new AuthTokensDto(access, refresh);
-    }
-
-    private void upsertRefreshToken(User user, String refreshToken) {
-        RefreshToken token = refreshTokenRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
-                .orElseGet(() -> new RefreshToken(user));
-        token.setTokenHash(sha256Base64(refreshToken));
-        token.setExpiresAt(LocalDateTime.now().plusSeconds(tokenProvider.getRefreshExpirationSeconds()));
-        token.setRevokedAt(null);
-        refreshTokenRepository.save(token);
-    }
-
-    private String sha256Base64(String value) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(value.getBytes(StandardCharsets.UTF_8));
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
+        return new AuthTokensDto(access);
     }
 
 }

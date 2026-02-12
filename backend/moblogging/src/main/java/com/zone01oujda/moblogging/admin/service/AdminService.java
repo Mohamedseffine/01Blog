@@ -26,7 +26,6 @@ import com.zone01oujda.moblogging.entity.Report;
 import com.zone01oujda.moblogging.entity.User;
 import com.zone01oujda.moblogging.exception.AccessDeniedException;
 import com.zone01oujda.moblogging.exception.ResourceNotFoundException;
-import com.zone01oujda.moblogging.auth.repository.RefreshTokenRepository;
 import com.zone01oujda.moblogging.post.enums.PostVisibility;
 import com.zone01oujda.moblogging.post.repository.PostRepository;
 import com.zone01oujda.moblogging.report.enums.ReportStatus;
@@ -46,17 +45,15 @@ public class AdminService {
     private final CommentRepository commentRepository;
     private final ReportRepository reportRepository;
     private final BanRepository banRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
 
     public AdminService(UserRepository userRepository, PostRepository postRepository,
             CommentRepository commentRepository, ReportRepository reportRepository,
-            BanRepository banRepository, RefreshTokenRepository refreshTokenRepository) {
+            BanRepository banRepository) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.reportRepository = reportRepository;
         this.banRepository = banRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     /**
@@ -179,10 +176,7 @@ public class AdminService {
         user.setBanned(false);
         userRepository.save(user);
         banRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
-            .ifPresent(ban -> {
-                ban.setUnbannedAt(LocalDateTime.now());
-                banRepository.save(ban);
-            });
+            .ifPresent(banRepository::delete);
     }
 
     /**
@@ -252,7 +246,7 @@ public class AdminService {
         if (target.getId().equals(current.getId())) {
             throw new AccessDeniedException("You cannot delete your own account");
         }
-        refreshTokenRepository.deleteByUserId(target.getId());
+        banRepository.deleteByUserId(target.getId());
         reportRepository.deleteByReporterId(target.getId());
         reportRepository.deleteByReportedUserId(target.getId());
         // Reports, comments, posts, etc. are set to cascade/orphan removal; repo delete will cascade.
