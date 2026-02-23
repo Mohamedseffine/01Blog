@@ -14,7 +14,7 @@ Full-stack blogging platform with posts, comments, reactions, follows, notificat
     ADMIN_SEED_ENABLED=true \
     ADMIN_USERNAME=admin \
     ADMIN_EMAIL=admin@example.com \
-    ADMIN_PASSWORD='Mosdef@123' \
+    ADMIN_PASSWORD='PASSWORD_EXAMPLE' \
     ADMIN_FIRST_NAME=Admin \
     ADMIN_LAST_NAME=User \
     ADMIN_GENDER=PREFER_NOT_TO_SAY \
